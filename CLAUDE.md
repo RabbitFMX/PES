@@ -16,13 +16,30 @@ challenges — all wrapped in a mobile-friendly, gamified, dog-pack-themed UI
 with a live leaderboard and personal stats. Every member has a login; there
 is no public-facing part of the app.
 
+## Two apps
+
+The repo is two self-contained apps plus a shared datastore. Each app has its
+own `CLAUDE.md` — read it before working in that directory:
+
+- **`frontend/`** — the React 19 + Vite SPA, the whole user-facing app. In
+  Phase 1 it runs on a mock API layer (`src/lib/mockApi.ts`) with no backend
+  calls. See `frontend/CLAUDE.md`.
+- **`backend/`** — the Express + TypeScript JSON API under `/api`. Owns points
+  calculation, rankings and standings; validates everything with Zod. See
+  `backend/CLAUDE.md`.
+- **Supabase** — hosted Postgres + Auth, the datastore both features build on.
+  SQL migrations live in `supabase/migrations`.
+
+The backend implements the real endpoints behind the frontend's mocks; the two
+are wired together in the later build chunks.
+
 ## Tech stack
 
 - **Frontend:** React (v19, latest stable — assumption) + Vite + TypeScript +
   Tailwind CSS. Recharts for charts. `react-i18next` for CS/EN i18n (Czech
   default). React Router for navigation.
 - **Backend:** Node.js (v24 LTS, already installed on this server) + Express
-  + TypeScript. Zod for request/response schema validation.
+  - TypeScript. Zod for request/response schema validation.
 - **Database:** PostgreSQL via Supabase (hosted Postgres, Auth, Storage —
   free tier). Supabase Auth handles email+password login.
 - **LLM:** Anthropic SDK, Claude Haiku, called with **tool-forced** structured
@@ -114,10 +131,14 @@ appears — if it does, discuss before adding a `packages/shared/` workspace.
 8. LLM calls are never a hard dependency: every AI-assisted path (natural
    -language logging, weekly recap) must have a working manual/fallback path,
    per brief §18–19.
+9. **When you add a feature or endpoint, or change structure, update the
+   relevant `CLAUDE.md`** — this root file for repo-wide changes,
+   `frontend/CLAUDE.md` or `backend/CLAUDE.md` for changes inside an app.
 
 ## Commands
 
 **Frontend** (`cd frontend`)
+
 - Install: `npm install`
 - Dev server: `npm run dev`
 - Test: `npm run test` (watch: `npm run test:watch`)
@@ -126,6 +147,7 @@ appears — if it does, discuss before adding a `packages/shared/` workspace.
 - Build: `npm run build` / Preview build: `npm run preview`
 
 **Backend** (`cd backend`)
+
 - Install: `npm install`
 - Dev server: `npm run dev` (tsx watch)
 - Test: `npm run test` (watch: `npm run test:watch`)
@@ -136,6 +158,7 @@ appears — if it does, discuss before adding a `packages/shared/` workspace.
 ## Definition of done
 
 A change is done when:
+
 - Tests pass (new/updated tests included for the change).
 - Lint, format, and type-check are all clean.
 - The app runs and the change has been exercised manually (dev server /

@@ -1,0 +1,157 @@
+# CLAUDE.md — PES backend
+
+Standing context for working in `backend/`. See `../project-brief.md` for the
+product (the data model is §13, the rate table §14), `../assignment/` for the
+chunk-by-chunk build plan, and `../CLAUDE.md` for repo-wide engineering rules.
+
+## Backend
+
+The PES JSON API: a small Express + TypeScript server that sits between the
+React client and Supabase Postgres. It owns the rules the frontend must not be
+trusted with — points calculation (rate table, fenčí koeficient, elevation and
+stroller bonuses), rankings, division standings and streaks — and exposes them
+as `/api/*` endpoints. Supabase provides the database and Auth; this service
+talks to it with the service-role key and validates every request and response
+with Zod.
+
+**Where it fits:** in Phase 1 the frontend runs entirely on its own mock layer
+(`frontend/src/lib/mockApi.ts`). This backend implements the real endpoints
+behind those mocks; chunk 12 swaps the frontend over to it. Each endpoint
+returns the exact shape the corresponding mock already returns, so the swap is
+a one-file change on the frontend.
+
+## Tech stack
+
+- **Runtime:** Node.js 24 LTS (installed on this server)
+- **Framework:** Express 5
+- **Language:** TypeScript (strict, `tsc --noEmit` for type-checking)
+- **Validation:** Zod — request and response schemas, validated server-side
+  before anything reaches the client
+- **Database:** `@supabase/supabase-js` against Supabase (hosted Postgres +
+  Auth). Migrations live in `../supabase/migrations` (chunk 3).
+- **LLM:** the Anthropic SDK is installed (`src/llm/anthropicClient.ts`) but
+  **deferred to seminar 6** — natural-language logging and the weekly recap.
+  No route depends on it yet, and every AI path must keep a manual fallback.
+- **Test runner:** Vitest + Supertest (HTTP/integration tests, colocated)
+- **Linter:** ESLint (flat config, `typescript-eslint`)
+- **Formatter:** Prettier (no semicolons, single quotes, width 100)
+- **Package manager:** npm
+
+## Commands
+
+Run from `backend/`:
+
+- Install: `npm install`
+- Dev server: `npm run dev` (tsx watch; listens on `PORT`, default 3001)
+- Test (once): `npm run test` · watch: `npm run test:watch`
+- Lint: `npm run lint`
+- Format: `npm run format` · check only: `npm run format:check`
+- Type-check: `npm run typecheck`
+- Production build: `npm run build` (tsc → `dist/`) · run it: `npm start`
+
+Before committing, `npm run typecheck && npm run lint && npm run format:check && npm run test`
+must all pass.
+
+## Environment
+
+Config comes from environment variables (see `.env.example`; real values in a
+gitignored `.env`):
+
+- `PORT` — port to listen on (default 3001)
+- `CORS_ORIGIN` — allowed frontend origin (default `http://localhost:5173`)
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` — Supabase
+- `ANTHROPIC_API_KEY` — present but unused until seminar 6
+
+## API structure
+
+Base path is `/api`, wired in `src/app.ts` (order: `express.json()` → CORS →
+resource routers → error handler last). The layers:
+
+- `src/routes/` — one router file per resource; thin HTTP glue only
+- `src/services/` — business logic (points calc, rankings, streaks); no HTTP
+- `src/schemas/` — Zod request/response schemas
+- `src/db/` — Supabase client and query helpers
+- `src/middleware/` — auth guard and the central error handler
+- `src/llm/` — Claude Haiku client + `log_activities` tool def (seminar 6)
+
+**Planned endpoints** (built across the later chunks; ticked = live):
+
+- `GET /api/health` — liveness ✅ (chunk 1)
+- `GET /api/me` — the current member's profile (chunk 4)
+- `GET /api/activities` — active rate table for the log-activity screen (chunk 5)
+- `POST /api/log-entries/preview` — compute points for an entry, no write (chunk 6)
+- `POST /api/log-entries` — commit a log entry (chunk 6)
+- `POST /api/log-entries/parse` — LLM natural-language → structured preview (seminar 6, deferred)
+- `GET /api/dashboard` — personal dashboard: weekly progress, streak (chunk 7)
+- `GET /api/leaderboard` — live standings across both divisions (chunk 8)
+- `GET /api/stats` — personal stats and history (chunk 9)
+- `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` (chunk 10)
+- Admin (`GET /api/admin/...`, admin-only):
+  - members: `GET /api/admin/members`, `POST /api/admin/members/invite`, `PATCH /api/admin/members/:id`
+  - activities: `GET /api/admin/activities`, `POST /api/admin/activities`, `PATCH /api/admin/activities/:id`
+  - rounds: `GET /api/admin/rounds`, `POST /api/admin/rounds`, `PATCH /api/admin/rounds/:id`
+  - challenge rotation: `GET /api/admin/rotation`, `PUT /api/admin/rotation` (chunk 11)
+
+A weekly-status endpoint for the n8n nudge workflow (brief §20) is planned but
+not yet scoped into a chunk.
+
+## Database schema
+
+The full model is brief §13; migrations land in `../supabase/migrations`
+(chunk 3). It is fine that this section describes tables before the SQL exists —
+**keep it in sync as migrations land.** Entities:
+
+- **Member** — a person: identity, `gender`, `coefficient` (1.0 or 1.25 — the
+  fenčí koeficient), current `division` (A/B), `role`, `status`, prefs, and
+  `injury_exempt_until` (illness/injury exemption the weekly nudge skips).
+- **Activity** — a row of the rate table (§14): CS/EN names, `unit`,
+  `points_per_unit`, per-activity elevation and stroller bonuses (additive
+  bonuses and, separately, `stroller_base_rate_override` for activities whose
+  base rate changes with a stroller), and `is_tiered` + `tier_options` (JSON)
+  for preset-dropdown activities.
+- **Round** — a half-year competition period (`start_date`, `end_date`, `status`).
+- **Week** — a week within a round (`round_id`, `week_number`, dates); the unit
+  the 100-point goal is measured against.
+- **LogEntry** — one logged activity: `member_id`, `week_id`, `activity_id`,
+  `activity_date`, `quantity`, `elevation_m`, `with_stroller`, plus `raw_points`
+  and `final_points` kept separate (so "24 ×1.25 = 30" is shown transparently),
+  `source` (manual / quick-add / llm), and `note`.
+- **Challenge** — a weekly challenge: `week_id`, `setter_member_id`, `title`,
+  `description`, `deadline`, `status`.
+- **ChallengeSubmission** — a member's entry to a challenge: `value`, `rank`,
+  `bonus_points`.
+- **ChallengeRotation** — the admin-defined order for who sets the next
+  challenge (`member_id`, `order_position`).
+- **MemberRoundDivision** — which division a member was in for a given past
+  round, so "best round finish" reflects their division at the time.
+
+Divisions, standings, promotion/relegation, dropped-worst-3 and the PSA-držák
+bonus are **computed at query time in `src/services`**, not stored as columns.
+
+## How to add an endpoint
+
+The concrete recipe (TDD — write the test first):
+
+1. **Schema** — add/extend a Zod schema in `src/schemas/` for the request body
+   and/or response shape. Match the shape the frontend mock already returns.
+2. **Route** — add a handler to the resource's router in `src/routes/` (create
+   `src/routes/<resource>.ts` if the resource is new). Keep it thin: parse and
+   validate with the schema, call a service, send the result.
+3. **Logic** — put the real work in a function in `src/services/`. Services
+   contain no Express types; they take plain inputs and return plain data so
+   they are unit-testable.
+4. **Mount** — mount the router under `/api` in `src/app.ts` (before the error
+   handler). Guard it with the auth middleware; admin routes also need the
+   admin check.
+5. **Test** — add a colocated Supertest test (`src/routes/<resource>.test.ts`)
+   covering success and the failure paths (401 unauthenticated, 400 invalid
+   body). Unit-test non-trivial service logic separately.
+6. **Document** — update this file (the endpoint list above, and the schema
+   section if the data model changed).
+
+## The rule
+
+**When you add a feature or endpoint or change the structure, update this
+file** — the API-structure endpoint list, the database-schema summary, or the
+commands, whichever changed. The context files are the map newcomers read
+before the code.
