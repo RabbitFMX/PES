@@ -107,7 +107,7 @@ through `mountProtected`.
 
 - `GET /api/health` — liveness ✅ (chunk 1)
 - `GET /api/me` — the current member's profile ✅ (chunk 4)
-- `GET /api/activities` — active rate table for the log-activity screen (chunk 5)
+- `GET /api/activities` — active rate table for the log-activity screen ✅ (chunk 5)
 - `POST /api/log-entries/preview` — compute points for an entry, no write (chunk 6)
 - `POST /api/log-entries` — commit a log entry (chunk 6)
 - `POST /api/log-entries/parse` — LLM natural-language → structured preview (seminar 6, deferred)
