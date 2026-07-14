@@ -6,7 +6,11 @@ import { errorHandler } from './middleware/errorHandler'
 export function createApp() {
   const app = express()
 
-  app.use(cors())
+  // Allow the frontend dev origin; configurable so deploys can point at the
+  // real domain. Defaults to the Vite dev server URL.
+  const corsOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:5173'
+
+  app.use(cors({ origin: corsOrigin }))
   app.use(express.json())
 
   app.use('/api', healthRouter)
