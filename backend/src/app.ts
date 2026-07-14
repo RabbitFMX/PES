@@ -1,6 +1,8 @@
 import cors from 'cors'
 import express from 'express'
 import { healthRouter } from './routes/health'
+import { meRouter } from './routes/me'
+import { mountProtected } from './middleware/auth'
 import { errorHandler } from './middleware/errorHandler'
 
 export function createApp() {
@@ -13,8 +15,13 @@ export function createApp() {
   app.use(cors({ origin: corsOrigin }))
   app.use(express.json())
 
+  // Public routes.
   app.use('/api', healthRouter)
 
+  // Protected routes (require a valid Supabase JWT resolving to a member).
+  mountProtected(app, '/api', meRouter)
+
+  // Error handler last.
   app.use(errorHandler)
 
   return app

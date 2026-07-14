@@ -85,10 +85,28 @@ resource routers → error handler last). The layers:
 - `src/middleware/` — auth guard and the central error handler
 - `src/llm/` — Claude Haiku client + `log_activities` tool def (seminar 6)
 
+### Authentication & guards
+
+The client logs in with Supabase Auth (email+password) and sends the JWT as
+`Authorization: Bearer <jwt>`. `src/middleware/auth.ts` provides:
+
+- `requireAuth()` — verifies the JWT with Supabase (`auth.getUser`), resolves it
+  to a `member` row (`member.id === auth.users` id) and attaches `req.member`
+  (typed `AuthedRequest`). Missing/invalid token → **401**; valid token but no
+  member row → **403 `not_a_member`** (invite-only, no auto-provisioning, §11).
+- `requireAdmin` — after `requireAuth`, rejects non-admins with **403**. A direct
+  hit on an admin route by a member is rejected, not just hidden.
+- `mountProtected(app, path, router, { admin?, deps? })` — mounts a router behind
+  the guards. `deps` injects the Supabase/member lookups so tests drive the
+  middleware without a live Supabase (mock `verifyToken`).
+
+Public routes (e.g. `/api/health`) are mounted directly; everything else goes
+through `mountProtected`.
+
 **Planned endpoints** (built across the later chunks; ticked = live):
 
 - `GET /api/health` — liveness ✅ (chunk 1)
-- `GET /api/me` — the current member's profile (chunk 4)
+- `GET /api/me` — the current member's profile ✅ (chunk 4)
 - `GET /api/activities` — active rate table for the log-activity screen (chunk 5)
 - `POST /api/log-entries/preview` — compute points for an entry, no write (chunk 6)
 - `POST /api/log-entries` — commit a log entry (chunk 6)
