@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+
+/*
+  Theme tokens per project-brief.md §9. Components must reference these
+  tokens (Tailwind utility classes below), never hard-coded hex values.
+*/
+:root {
+  --color-primary: #ea580c; /* deep orange - app bar, key headings, logo */
+  --color-secondary: #1e293b; /* slate blue - nav, text blocks, contrast */
+  --color-background: #fafaf9; /* warm off-white */
+  --color-text: #0f172a; /* near-black slate */
+  --color-accent: #f59e0b; /* amber - progress ring, "+" button, celebrations */
+  --color-success: #10b981; /* emerald - goal met, streak alive */
+}
+
+[data-theme='dark'] {
+  --color-primary: #ea580c;
+  --color-secondary: #cbd5e1;
+  --color-background: #0f172a;
+  --color-text: #f1f5f9;
+  --color-accent: #f59e0b;
+  --color-success: #10b981;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-background: var(--color-background);
+  --color-text: var(--color-text);
+  --color-accent: var(--color-accent);
+  --color-success: var(--color-success);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}

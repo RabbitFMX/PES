@@ -1,0 +1,17 @@
+{
+  "app": {
+    "name": "PES",
+    "tagline": "Prostě Enormně Sexy"
+  },
+  "nav": {
+    "dashboard": "Přehled",
+    "leaderboard": "Žebříček",
+    "challenges": "Výzvy",
+    "stats": "Statistiky",
+    "logActivity": "Zapsat aktivitu"
+  },
+  "dashboard": {
+    "welcome": "Vítej ve smečce! Zapiš první aktivitu.",
+    "pointsToGoal": "{{points}} bodů do cíle"
+  }
+}

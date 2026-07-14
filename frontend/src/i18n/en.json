@@ -1,0 +1,17 @@
+{
+  "app": {
+    "name": "PES",
+    "tagline": "Simply Enormously Sexy"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "leaderboard": "Leaderboard",
+    "challenges": "Challenges",
+    "stats": "Stats",
+    "logActivity": "Log activity"
+  },
+  "dashboard": {
+    "welcome": "Welcome to the pack! Log your first activity.",
+    "pointsToGoal": "{{points}} points to goal"
+  }
+}
