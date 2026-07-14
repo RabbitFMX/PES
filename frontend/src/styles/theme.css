@@ -1,37 +1,101 @@
 @import 'tailwindcss';
 
 /*
-  Theme tokens per project-brief.md §9. Components must reference these
-  tokens (Tailwind utility classes below), never hard-coded hex values.
+  Theme tokens per project-brief.md §9 and assignment/frontend.md "Visual
+  design". Components must reference these tokens (via Tailwind utility
+  classes such as bg-surface / text-muted), never hard-coded hex values.
+
+  Tokens marked (assumption) were not in the brief and are proposed here as a
+  modern, clean, accessible extension.
 */
 :root {
   --color-primary: #ea580c; /* deep orange - app bar, key headings, logo */
   --color-secondary: #1e293b; /* slate blue - nav, text blocks, contrast */
   --color-background: #fafaf9; /* warm off-white */
+  --color-surface: #ffffff; /* (assumption) cards, modals */
   --color-text: #0f172a; /* near-black slate */
+  --color-muted: #64748b; /* (assumption) secondary/caption text */
+  --color-border: #e5e4e7; /* (assumption) dividers, input borders */
   --color-accent: #f59e0b; /* amber - progress ring, "+" button, celebrations */
   --color-success: #10b981; /* emerald - goal met, streak alive */
+  --color-danger: #dc2626; /* (assumption) destructive actions, errors */
+
+  /* on-* = readable foreground to place ON a filled token (see a11y notes) */
+  --color-on-accent: #0f172a;
+  --color-on-success: #052e1a;
+  --color-on-primary: #ffffff;
 }
 
 [data-theme='dark'] {
   --color-primary: #ea580c;
   --color-secondary: #cbd5e1;
   --color-background: #0f172a;
+  --color-surface: #1e293b;
   --color-text: #f1f5f9;
+  --color-muted: #94a3b8;
+  --color-border: #334155;
   --color-accent: #f59e0b;
   --color-success: #10b981;
+  --color-danger: #f87171;
+
+  --color-on-accent: #0f172a;
+  --color-on-success: #052e1a;
+  --color-on-primary: #ffffff;
 }
 
 @theme inline {
   --color-primary: var(--color-primary);
   --color-secondary: var(--color-secondary);
   --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
   --color-text: var(--color-text);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
   --color-accent: var(--color-accent);
   --color-success: var(--color-success);
+  --color-danger: var(--color-danger);
+  --color-on-accent: var(--color-on-accent);
+  --color-on-success: var(--color-on-success);
+  --color-on-primary: var(--color-on-primary);
+
+  /* Corner radius scale (assumption) */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Elevation (assumption) */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.16);
+
+  /* Typography — system stack, full Czech diacritic support (assumption) */
+  --font-sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+html {
+  color-scheme: light dark;
 }
 
 body {
+  margin: 0;
+  font-family: var(--font-sans);
   background-color: var(--color-background);
   color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Consistent, always-visible focus indicator (assignment: Accessibility). */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

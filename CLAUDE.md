@@ -46,20 +46,21 @@ is no public-facing part of the app.
 
 ```
 PES/
-├── frontend/
+├── frontend/                       # PHASE 1: runs on a mock API layer only (no backend calls yet)
 │   ├── src/
-│   │   ├── pages/            # one folder per screen: dashboard, log-activity,
-│   │   │                      # leaderboard, stats, challenges, admin
-│   │   ├── components/        # shared/reusable UI (buttons, progress ring, cards)
-│   │   ├── lib/                # API client, hooks, utilities
-│   │   ├── i18n/                # cs.json / en.json translation resources
-│   │   ├── styles/               # Tailwind config, CSS variable theme tokens
+│   │   ├── pages/            # one folder per screen: login, dashboard, log-activity,
+│   │   │                      # leaderboard, stats, challenges, admin, profile
+│   │   ├── components/        # shared UI: components/ui (primitives), components/layout (shell/nav)
+│   │   ├── context/           # theme, auth, toast, logActivity providers (hook + provider split)
+│   │   ├── lib/                # mockApi.ts (the fake backend — every call marked TODO: connect to API),
+│   │   │                        # types.ts, useAsync hook, points calc, format/cn helpers
+│   │   ├── i18n/                # cs.json / en.json (Czech default), i18next setup
+│   │   ├── styles/               # theme.css — CSS-variable theme tokens (light/dark)
 │   │   ├── App.tsx, main.tsx
 │   │   └── **/*.test.tsx        # colocated with the component/page it tests
 │   ├── public/                    # static assets, favicon (paw-mark SVG)
 │   ├── index.html
 │   ├── vite.config.ts
-│   ├── tailwind.config.ts
 │   ├── tsconfig.json
 │   ├── eslint.config.js
 │   ├── package.json
