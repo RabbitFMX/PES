@@ -49,6 +49,12 @@ Run from `backend/`:
 - Type-check: `npm run typecheck`
 - Production build: `npm run build` (tsc → `dist/`) · run it: `npm start`
 
+Database (need `DATABASE_URL`, the Postgres connection string — see below):
+
+- Apply migrations: `npm run db:migrate` (applies unapplied `supabase/migrations/*.sql`)
+- Seed reference data: `npm run db:seed` (activities + round + weeks)
+- Seed local demo members: `npm run db:seed:dev` (plain-Postgres/dev only)
+
 Before committing, `npm run typecheck && npm run lint && npm run format:check && npm run test`
 must all pass.
 
@@ -60,6 +66,9 @@ gitignored `.env`):
 - `PORT` — port to listen on (default 3001)
 - `CORS_ORIGIN` — allowed frontend origin (default `http://localhost:5173`)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` — Supabase
+  (the app's runtime DB access goes through `@supabase/supabase-js`)
+- `DATABASE_URL` — Postgres connection string, used **only** by the migrate/seed
+  scripts (Supabase → Project Settings → Database; or any Postgres URL locally)
 - `ANTHROPIC_API_KEY` — present but unused until seminar 6
 
 ## API structure
@@ -70,7 +79,9 @@ resource routers → error handler last). The layers:
 - `src/routes/` — one router file per resource; thin HTTP glue only
 - `src/services/` — business logic (points calc, rankings, streaks); no HTTP
 - `src/schemas/` — Zod request/response schemas
-- `src/db/` — Supabase client and query helpers
+- `src/db/` — Supabase client, typed row types (`types.ts`), per-table query
+  helpers (e.g. `activities.ts`), and the `migrate.ts` / `seed.ts` runners.
+  Keep raw SQL/queries here, never in routes.
 - `src/middleware/` — auth guard and the central error handler
 - `src/llm/` — Claude Haiku client + `log_activities` tool def (seminar 6)
 
@@ -97,9 +108,28 @@ not yet scoped into a chunk.
 
 ## Database schema
 
-The full model is brief §13; migrations land in `../supabase/migrations`
-(chunk 3). It is fine that this section describes tables before the SQL exists —
-**keep it in sync as migrations land.** Entities:
+The full model is brief §13. The SQL lives in `../supabase/migrations`
+(`20260714120000_init_schema.sql`) and reference data in `../supabase/seed.sql`;
+apply both with `npm run db:migrate && npm run db:seed`. **Keep this section in
+sync as new migrations land.** Tables are snake_case
+(`member`, `activity`, `round`, `week`, `log_entry`, `challenge`,
+`challenge_submission`, `challenge_rotation`, `member_round_division`).
+
+Key modeling decisions:
+
+- **`member.id` IS the Supabase `auth.users` UUID** — an authenticated request
+  maps straight to a member row. There is **no `password_hash` column**:
+  Supabase Auth owns credentials (§11/§25). The FK to `auth.users` is added by
+  the migration only when that schema exists, so migrations also apply to a
+  plain Postgres DB (used for local/CI verification).
+- **`activity.id` is a text slug** (`run`, `hike`, …) matching the frontend rate
+  table, so the frontend↔API swap in chunk 12 is clean.
+- Rep/strength activities encode the block size in `unit` (e.g. `'10 reps'`)
+  with `points_per_unit = 1`; tiered activities use `unit = 'pts'`,
+  `points_per_unit = 0`, and a `tier_options` array (the logged quantity is the
+  chosen preset value). Seed covers all 35 activities of §14.
+
+Entities:
 
 - **Member** — a person: identity, `gender`, `coefficient` (1.0 or 1.25 — the
   fenčí koeficient), current `division` (A/B), `role`, `status`, prefs, and
