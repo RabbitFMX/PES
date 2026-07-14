@@ -21,5 +21,8 @@ npm-debug.log*
 .vscode/
 .idea/
 
+# Claude Code project/session data
+.claude/
+
 # test/coverage
 coverage/
