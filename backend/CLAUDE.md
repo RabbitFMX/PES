@@ -108,9 +108,10 @@ through `mountProtected`.
 - `GET /api/health` — liveness ✅ (chunk 1)
 - `GET /api/me` — the current member's profile ✅ (chunk 4)
 - `GET /api/activities` — active rate table for the log-activity screen ✅ (chunk 5)
-- `POST /api/log-entries/preview` — compute points for an entry, no write (chunk 6)
-- `POST /api/log-entries` — commit a log entry (chunk 6)
-- `POST /api/log-entries/parse` — LLM natural-language → structured preview (seminar 6, deferred)
+- `POST /api/log-entries/preview` — compute points for an entry, no write ✅ (chunk 6)
+- `POST /api/log-entries` — commit a log entry ✅ (chunk 6)
+- `POST /api/log-entries/parse` — LLM natural-language → structured preview;
+  **deferred to seminar 6** — returns `501 not_implemented` (stub, no LLM call)
 - `GET /api/dashboard` — personal dashboard: weekly progress, streak (chunk 7)
 - `GET /api/leaderboard` — live standings across both divisions (chunk 8)
 - `GET /api/stats` — personal stats and history (chunk 9)
@@ -127,7 +128,9 @@ not yet scoped into a chunk.
 ## Database schema
 
 The full model is brief §13. The SQL lives in `../supabase/migrations`
-(`20260714120000_init_schema.sql`) and reference data in `../supabase/seed.sql`;
+(`20260714120000_init_schema.sql`, then `20260714130000_log_entry_quickadd.sql`
+which makes `log_entry.activity_id` nullable for quick-add entries) and
+reference data in `../supabase/seed.sql`;
 apply both with `npm run db:migrate && npm run db:seed`. **Keep this section in
 sync as new migrations land.** Tables are snake_case
 (`member`, `activity`, `round`, `week`, `log_entry`, `challenge`,
@@ -163,7 +166,12 @@ Entities:
 - **LogEntry** — one logged activity: `member_id`, `week_id`, `activity_id`,
   `activity_date`, `quantity`, `elevation_m`, `with_stroller`, plus `raw_points`
   and `final_points` kept separate (so "24 ×1.25 = 30" is shown transparently),
-  `source` (manual / quick-add / llm), and `note`.
+  `source` (manual / quick-add / llm), and `note`. `activity_id` is **null for
+  quick-add** entries (raw point totals for edge cases with no rate-table
+  activity, brief §22); detailed/LLM entries reference a real activity. Points
+  are always computed server-side in `services/points.ts` — the client value is
+  never trusted. Every entry is assigned to the currently open `week`
+  (`services/logEntries.ts`); a date outside it is rejected (400).
 - **Challenge** — a weekly challenge: `week_id`, `setter_member_id`, `title`,
   `description`, `deadline`, `status`.
 - **ChallengeSubmission** — a member's entry to a challenge: `value`, `rank`,

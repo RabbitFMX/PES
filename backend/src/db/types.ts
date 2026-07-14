@@ -52,3 +52,23 @@ export interface WeekRow {
   start_date: string
   end_date: string
 }
+
+export interface LogEntryRow {
+  id: string
+  member_id: string
+  week_id: string
+  activity_id: string | null // null for quick-add entries (no rate-table activity)
+  activity_date: string
+  quantity: number
+  unit: string
+  elevation_m: number | null
+  with_stroller: boolean
+  raw_points: number
+  final_points: number
+  source: 'manual' | 'quick-add' | 'llm'
+  note: string | null
+  created_at: string
+}
+
+/** Columns supplied when inserting a log entry (DB fills id/created_at). */
+export type NewLogEntry = Omit<LogEntryRow, 'id' | 'created_at'>
