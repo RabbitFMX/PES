@@ -16,3 +16,11 @@ export async function getMemberById(
   if (error) throw error
   return (data as MemberRow | null) ?? null
 }
+
+/** All active members (used for round standings). */
+export async function listActiveMembers(client: Supabase = supabase): Promise<MemberRow[]> {
+  const { data, error } = await client.from('member').select('*').eq('status', 'active')
+
+  if (error) throw error
+  return (data ?? []) as MemberRow[]
+}

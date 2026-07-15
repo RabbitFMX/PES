@@ -72,3 +72,21 @@ export interface LogEntryRow {
 
 /** Columns supplied when inserting a log entry (DB fills id/created_at). */
 export type NewLogEntry = Omit<LogEntryRow, 'id' | 'created_at'>
+
+export interface ChallengeRow {
+  id: string
+  week_id: string
+  setter_member_id: string | null
+  title: string
+  description: string | null
+  deadline: string | null
+  status: 'open' | 'closed'
+  created_at: string
+}
+
+/** Which division a member was in for a given (past) round. */
+export interface MemberRoundDivisionRow {
+  member_id: string
+  round_id: string
+  division: 'A' | 'B'
+}

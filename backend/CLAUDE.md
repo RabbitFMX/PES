@@ -112,7 +112,7 @@ through `mountProtected`.
 - `POST /api/log-entries` — commit a log entry ✅ (chunk 6)
 - `POST /api/log-entries/parse` — LLM natural-language → structured preview;
   **deferred to seminar 6** — returns `501 not_implemented` (stub, no LLM call)
-- `GET /api/dashboard` — personal dashboard: weekly progress, streak (chunk 7)
+- `GET /api/dashboard` — personal dashboard: weekly progress, streak ✅ (chunk 7)
 - `GET /api/leaderboard` — live standings across both divisions (chunk 8)
 - `GET /api/stats` — personal stats and history (chunk 9)
 - `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` (chunk 10)

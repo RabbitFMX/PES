@@ -37,6 +37,28 @@ export async function getWeeklyTotalPoints(
 }
 
 /**
+ * All entries across a set of weeks (a round), as the minimal columns standings
+ * and streaks need: which member, which week, and the final points. One query
+ * feeds every per-member and per-week aggregate the dashboard computes.
+ */
+export async function listRoundEntries(
+  weekIds: string[],
+  client: Supabase = supabase,
+): Promise<{ member_id: string; week_id: string; final_points: number }[]> {
+  if (weekIds.length === 0) return []
+
+  const { data, error } = await client
+    .from('log_entry')
+    .select('member_id, week_id, final_points')
+    .in('week_id', weekIds)
+
+  if (error) throw error
+  const rows = (data ?? []) as { member_id: string; week_id: string; final_points: number }[]
+  // Numeric columns can arrive as strings from the driver — normalise.
+  return rows.map((r) => ({ ...r, final_points: Number(r.final_points) }))
+}
+
+/**
  * Whether the member already logged an identical entry (same activity, quantity
  * and date). Used for the soft duplicate warning — the new entry is still
  * saved, but the UI flags it.
