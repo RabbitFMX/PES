@@ -1,0 +1,49 @@
+# PES production stack: backend (Express API) + frontend (static SPA via nginx).
+# Both are built from their own multi-stage Dockerfile.
+#
+# Config comes from a project .env in this directory (copy .env.example ->
+# .env and fill it in). Compose reads that file automatically for ${VAR}
+# interpolation below, and the backend also loads it verbatim via env_file.
+#
+# NOTE: the two services share a network, but the browser talks to the backend
+# DIRECTLY (a static SPA calls the API over the public internet), so the
+# backend is also published on a host port. In the eventual server setup both
+# services sit behind Traefik at <surname>.aibr.cz — see CLAUDE.md.
+
+services:
+  backend:
+    build:
+      context: ./backend
+    image: pes-backend
+    restart: always
+    # Backend reads all of its runtime config from the project .env.
+    env_file:
+      - .env
+    networks:
+      - pes-net
+    # Published so the browser can reach the API (until Traefik fronts it).
+    ports:
+      - '3001:3001'
+
+  frontend:
+    build:
+      context: ./frontend
+      # VITE_* vars are inlined at build time, so they are passed as build
+      # args (Compose fills them from the project .env).
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    image: pes-frontend
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - pes-net
+    # nginx serves on :80 inside the container; exposed on host :8080.
+    ports:
+      - '8080:80'
+
+networks:
+  pes-net:
+    driver: bridge

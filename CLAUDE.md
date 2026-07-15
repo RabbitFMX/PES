@@ -48,6 +48,36 @@ The backend implements the real endpoints; the frontend consumes them
 4. **Frontend** — from `frontend/`: `npm run dev` (serves `:5173`, calls the API).
 5. Log in as a seeded member (and an admin) and walk the screens.
 
+## Running in production (Docker)
+
+The app ships as two containers built from multi-stage Dockerfiles, wired
+together by the root `docker-compose.yml`:
+
+- **`backend/Dockerfile`** — build stage runs `npm ci` + `npm run build`
+  (tsc → `dist/`); the slim production stage installs only prod deps
+  (`npm ci --omit=dev`), copies `dist/`, and runs `node dist/server.js` as the
+  non-root `node` user on `PORT` (default 3001).
+- **`frontend/Dockerfile`** — build stage runs `npm run build` (Vite → `dist/`);
+  the production stage serves the static bundle with nginx (`frontend/nginx.conf`
+  adds SPA fallback + asset caching). `VITE_*` vars are inlined at **build
+  time**, so Compose passes them as build args from the project `.env`.
+- **`docker-compose.yml`** (repo root) — `backend` + `frontend` services on a
+  shared bridge network `pes-net`, both `restart: always`. The backend reads
+  its config from the project `.env` via `env_file`; the frontend's `VITE_*`
+  build args are interpolated from the same `.env`. Ports: backend `3001:3001`
+  (the browser calls the API directly, so it is published too), frontend
+  `8080:80`.
+
+**Config:** copy the root `.env.example` → `.env` (gitignored) and fill it in.
+It carries both the backend runtime config and the frontend build-time
+`VITE_*` vars. `.dockerignore` files in each app keep `node_modules`, `dist`,
+and `.env` out of the images.
+
+**Deploy:** `docker compose build` then `docker compose up -d`. In the eventual
+server setup both services sit behind Traefik (reverse proxy + HTTPS) at
+`<surname>.aibr.cz`; `CORS_ORIGIN` / `VITE_API_BASE_URL` are set to that public
+URL. Traefik is not wired in yet.
+
 ## Tech stack
 
 - **Frontend:** React (v19, latest stable — assumption) + Vite + TypeScript +

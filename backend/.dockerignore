@@ -1,0 +1,23 @@
+# Never copy installed deps or build output — the image builds these itself.
+node_modules
+dist
+
+# Secrets and local env — must never enter an image layer.
+.env
+.env.*
+
+# VCS / editor / OS noise
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# Tooling artefacts and logs
+coverage
+*.log
+npm-debug.log*
+
+# Docker files themselves
+Dockerfile
+.dockerignore
