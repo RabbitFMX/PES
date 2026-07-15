@@ -115,7 +115,7 @@ through `mountProtected`.
 - `GET /api/dashboard` — personal dashboard: weekly progress, streak ✅ (chunk 7)
 - `GET /api/leaderboard` — live standings across both divisions ✅ (chunk 8)
 - `GET /api/stats` — personal stats and history ✅ (chunk 9)
-- `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` (chunk 10)
+- `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` ✅ (chunk 10)
 - Admin (`GET /api/admin/...`, admin-only):
   - members: `GET /api/admin/members`, `POST /api/admin/members/invite`, `PATCH /api/admin/members/:id`
   - activities: `GET /api/admin/activities`, `POST /api/admin/activities`, `PATCH /api/admin/activities/:id`
@@ -129,7 +129,9 @@ not yet scoped into a chunk.
 
 The full model is brief §13. The SQL lives in `../supabase/migrations`
 (`20260714120000_init_schema.sql`, then `20260714130000_log_entry_quickadd.sql`
-which makes `log_entry.activity_id` nullable for quick-add entries) and
+which makes `log_entry.activity_id` nullable for quick-add entries, then
+`20260715120000_challenge_bonus_split.sql` which adds the optional
+`challenge.bonus_split` custom placement points) and
 reference data in `../supabase/seed.sql`;
 apply both with `npm run db:migrate && npm run db:seed`. **Keep this section in
 sync as new migrations land.** Tables are snake_case
@@ -173,9 +175,14 @@ Entities:
   never trusted. Every entry is assigned to the currently open `week`
   (`services/logEntries.ts`); a date outside it is rejected (400).
 - **Challenge** — a weekly challenge: `week_id`, `setter_member_id`, `title`,
-  `description`, `deadline`, `status`.
+  `description`, `deadline`, `status`, and an optional `bonus_split` (custom
+  placement points; null → the default 30/20/10 in `services/challenges.ts`).
+  Ranks/bonuses are computed from submissions (ties split a placement's points
+  evenly, §15/§22); the current setter is decided by `challenge_rotation`
+  advanced one slot per challenge created.
 - **ChallengeSubmission** — a member's entry to a challenge: `value`, `rank`,
-  `bonus_points`.
+  `bonus_points`. Unique `(challenge_id, member_id)` → one award per member;
+  submitting upserts the latest value and recomputes every rank/bonus.
 - **ChallengeRotation** — the admin-defined order for who sets the next
   challenge (`member_id`, `order_position`).
 - **MemberRoundDivision** — which division a member was in for a given past

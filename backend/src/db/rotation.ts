@@ -1,0 +1,28 @@
+import { supabase, type Supabase } from './supabaseClient'
+
+/**
+ * Query helpers for the `challenge_rotation` table (the admin-defined order for
+ * who sets the next weekly challenge). Chunk 10 reads it to work out whose turn
+ * it is; chunk 11 adds the admin write (PUT /api/admin/rotation).
+ */
+
+export interface RotationEntry {
+  memberId: string
+  orderPosition: number
+}
+
+/** The rotation order, ascending by position. */
+export async function getRotation(client: Supabase = supabase): Promise<RotationEntry[]> {
+  const { data, error } = await client
+    .from('challenge_rotation')
+    .select('member_id, order_position')
+    .order('order_position', { ascending: true })
+
+  if (error) throw error
+
+  type Row = { member_id: string; order_position: number }
+  return ((data ?? []) as Row[]).map((r) => ({
+    memberId: r.member_id,
+    orderPosition: r.order_position,
+  }))
+}

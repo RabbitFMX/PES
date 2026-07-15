@@ -82,6 +82,17 @@ export interface ChallengeRow {
   deadline: string | null
   status: 'open' | 'closed'
   created_at: string
+  bonus_split: number[] | null // custom placement points; null → default 30/20/10
+}
+
+export interface ChallengeSubmissionRow {
+  id: string
+  challenge_id: string
+  member_id: string
+  value: number | null
+  rank: number | null
+  bonus_points: number
+  submitted_at: string
 }
 
 /** Which division a member was in for a given (past) round. */

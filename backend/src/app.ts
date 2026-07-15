@@ -1,6 +1,7 @@
 import cors from 'cors'
 import express from 'express'
 import { activitiesRouter } from './routes/activities'
+import { challengesRouter } from './routes/challenges'
 import { dashboardRouter } from './routes/dashboard'
 import { healthRouter } from './routes/health'
 import { leaderboardRouter } from './routes/leaderboard'
@@ -30,6 +31,7 @@ export function createApp() {
   mountProtected(app, '/api', dashboardRouter)
   mountProtected(app, '/api', leaderboardRouter)
   mountProtected(app, '/api', statsRouter)
+  mountProtected(app, '/api', challengesRouter)
 
   // Error handler last.
   app.use(errorHandler)

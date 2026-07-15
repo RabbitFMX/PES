@@ -82,6 +82,7 @@ const challenge: ChallengeRow = {
   deadline: null,
   status: 'open',
   created_at: '2026-02-01T00:00:00Z',
+  bonus_split: null,
 }
 
 describe('GET /api/dashboard', () => {
