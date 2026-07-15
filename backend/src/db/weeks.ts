@@ -31,6 +31,17 @@ export async function getCurrentWeek(
   return week as WeekRow
 }
 
+/** Every week across all rounds, ordered by `start_date` ascending. */
+export async function listWeeks(client: Supabase = supabase): Promise<WeekRow[]> {
+  const { data, error } = await client
+    .from('week')
+    .select('id, round_id, week_number, start_date, end_date')
+    .order('start_date', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as WeekRow[]
+}
+
 /** All weeks of a round, ordered by `week_number` ascending. */
 export async function listWeeksByRound(
   roundId: string,

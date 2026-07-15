@@ -19,6 +19,29 @@ export async function getOpenRound(client: Supabase = supabase): Promise<RoundRo
   return (data as RoundRow | null) ?? null
 }
 
+/** All rounds, most recent first (by start date). */
+export async function listRounds(client: Supabase = supabase): Promise<RoundRow[]> {
+  const { data, error } = await client
+    .from('round')
+    .select('id, name, start_date, end_date, status')
+    .order('start_date', { ascending: false })
+
+  if (error) throw error
+  return (data ?? []) as RoundRow[]
+}
+
+/** Every recorded member↔round division (across all rounds). */
+export async function listAllMemberRoundDivisions(
+  client: Supabase = supabase,
+): Promise<MemberRoundDivisionRow[]> {
+  const { data, error } = await client
+    .from('member_round_division')
+    .select('member_id, round_id, division')
+
+  if (error) throw error
+  return (data ?? []) as MemberRoundDivisionRow[]
+}
+
 /**
  * The recorded division per member for a given round (`member_round_division`).
  * Present for past rounds; usually empty for the current one, where standings

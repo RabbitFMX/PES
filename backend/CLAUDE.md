@@ -114,7 +114,7 @@ through `mountProtected`.
   **deferred to seminar 6** — returns `501 not_implemented` (stub, no LLM call)
 - `GET /api/dashboard` — personal dashboard: weekly progress, streak ✅ (chunk 7)
 - `GET /api/leaderboard` — live standings across both divisions ✅ (chunk 8)
-- `GET /api/stats` — personal stats and history (chunk 9)
+- `GET /api/stats` — personal stats and history ✅ (chunk 9)
 - `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` (chunk 10)
 - Admin (`GET /api/admin/...`, admin-only):
   - members: `GET /api/admin/members`, `POST /api/admin/members/invite`, `PATCH /api/admin/members/:id`

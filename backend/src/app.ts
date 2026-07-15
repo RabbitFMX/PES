@@ -6,6 +6,7 @@ import { healthRouter } from './routes/health'
 import { leaderboardRouter } from './routes/leaderboard'
 import { logEntriesRouter } from './routes/logEntries'
 import { meRouter } from './routes/me'
+import { statsRouter } from './routes/stats'
 import { mountProtected } from './middleware/auth'
 import { errorHandler } from './middleware/errorHandler'
 
@@ -28,6 +29,7 @@ export function createApp() {
   mountProtected(app, '/api', logEntriesRouter)
   mountProtected(app, '/api', dashboardRouter)
   mountProtected(app, '/api', leaderboardRouter)
+  mountProtected(app, '/api', statsRouter)
 
   // Error handler last.
   app.use(errorHandler)

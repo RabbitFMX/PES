@@ -59,6 +59,67 @@ export async function listRoundEntries(
 }
 
 /**
+ * One of a member's log entries with the joined bits the Stats aggregates need:
+ * the activity's names and the entry's week (date, number, round). A single
+ * indexed query (`log_entry_member_id_idx`) feeds every lifetime aggregate, so
+ * the year-spanning stats stay one round-trip. `activity` is null for quick-add.
+ */
+export interface MemberStatEntry {
+  activityDate: string
+  quantity: number
+  unit: string
+  finalPoints: number
+  weekId: string
+  weekStartDate: string
+  weekNumber: number
+  roundId: string
+  activityId: string | null
+  activityNameCs: string | null
+  activityNameEn: string | null
+}
+
+/** All of a member's entries (lifetime) with activity + week joined. */
+export async function listMemberEntriesDetailed(
+  memberId: string,
+  client: Supabase = supabase,
+): Promise<MemberStatEntry[]> {
+  const { data, error } = await client
+    .from('log_entry')
+    .select(
+      'activity_date, quantity, unit, final_points, week_id, activity_id, ' +
+        'week!inner(start_date, week_number, round_id), activity(name_cs, name_en)',
+    )
+    .eq('member_id', memberId)
+
+  if (error) throw error
+
+  type Row = {
+    activity_date: string
+    quantity: number
+    unit: string
+    final_points: number
+    week_id: string
+    activity_id: string | null
+    week: { start_date: string; week_number: number; round_id: string }
+    activity: { name_cs: string; name_en: string } | null
+  }
+
+  return ((data ?? []) as unknown as Row[]).map((r) => ({
+    activityDate: r.activity_date,
+    quantity: Number(r.quantity),
+    unit: r.unit,
+    finalPoints: Number(r.final_points),
+    weekId: r.week_id,
+    weekStartDate: r.week.start_date,
+    weekNumber: r.week.week_number,
+    roundId: r.week.round_id,
+    activityId: r.activity_id,
+    activityNameCs: r.activity?.name_cs ?? null,
+    activityNameEn: r.activity?.name_en ?? null,
+  }))
+}
+
+/**
  * Whether the member already logged an identical entry (same activity, quantity
  * and date). Used for the soft duplicate warning — the new entry is still
  * saved, but the UI flags it.
