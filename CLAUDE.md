@@ -21,17 +21,32 @@ is no public-facing part of the app.
 The repo is two self-contained apps plus a shared datastore. Each app has its
 own `CLAUDE.md` — read it before working in that directory:
 
-- **`frontend/`** — the React 19 + Vite SPA, the whole user-facing app. In
-  Phase 1 it runs on a mock API layer (`src/lib/mockApi.ts`) with no backend
-  calls. See `frontend/CLAUDE.md`.
+- **`frontend/`** — the React 19 + Vite SPA, the whole user-facing app. It calls
+  the backend through a single data layer (`src/lib/api.ts`) and logs in with
+  Supabase Auth. The only remaining mock is the natural-language parse (LLM,
+  deferred to seminar 6). See `frontend/CLAUDE.md`.
 - **`backend/`** — the Express + TypeScript JSON API under `/api`. Owns points
   calculation, rankings and standings; validates everything with Zod. See
   `backend/CLAUDE.md`.
-- **Supabase** — hosted Postgres + Auth, the datastore both features build on.
+- **Supabase** — hosted Postgres + Auth, the datastore both apps build on.
   SQL migrations live in `supabase/migrations`.
 
-The backend implements the real endpoints behind the frontend's mocks; the two
-are wired together in the later build chunks.
+The backend implements the real endpoints; the frontend consumes them
+(`src/lib/api.ts`), so the app runs end-to-end against the API.
+
+## Running both apps (demo)
+
+1. **Supabase** — create a project; put its URL + keys in `backend/.env`
+   (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`,
+   `DATABASE_URL`) and `frontend/.env` (`VITE_API_BASE_URL=http://localhost:3001/api`,
+   `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`). Both `.env` files are gitignored;
+   copy from each app's `.env.example`.
+2. **Schema + seed** — from `backend/`: `npm run db:migrate && npm run db:seed`
+   (and `npm run db:seed:dev` for demo members). Promote your first admin
+   manually in Supabase (§25).
+3. **Backend** — from `backend/`: `npm run dev` (listens on `:3001`).
+4. **Frontend** — from `frontend/`: `npm run dev` (serves `:5173`, calls the API).
+5. Log in as a seeded member (and an admin) and walk the screens.
 
 ## Tech stack
 
@@ -63,14 +78,14 @@ are wired together in the later build chunks.
 
 ```
 PES/
-├── frontend/                       # PHASE 1: runs on a mock API layer only (no backend calls yet)
+├── frontend/                       # React SPA — calls the backend via src/lib/api.ts (Supabase Auth)
 │   ├── src/
 │   │   ├── pages/            # one folder per screen: login, dashboard, log-activity,
 │   │   │                      # leaderboard, stats, challenges, admin, profile
 │   │   ├── components/        # shared UI: components/ui (primitives), components/layout (shell/nav)
 │   │   ├── context/           # theme, auth, toast, logActivity providers (hook + provider split)
-│   │   ├── lib/                # mockApi.ts (the fake backend — every call marked TODO: connect to API),
-│   │   │                        # types.ts, useAsync hook, points calc, format/cn helpers
+│   │   ├── lib/                # api.ts (data layer → /api/*), apiClient.ts, supabase.ts,
+│   │   │                        # types.ts, useAsync hook, format/cn helpers
 │   │   ├── i18n/                # cs.json / en.json (Czech default), i18next setup
 │   │   ├── styles/               # theme.css — CSS-variable theme tokens (light/dark)
 │   │   ├── App.tsx, main.tsx

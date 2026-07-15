@@ -82,7 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (bootstrapping) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg">
-        <span className="animate-pulse text-3xl" role="status" aria-label="…">
+        <span
+          className="animate-pulse text-3xl"
+          role="status"
+          aria-label={i18n.t('common.loading')}
+        >
           🐾
         </span>
       </div>
