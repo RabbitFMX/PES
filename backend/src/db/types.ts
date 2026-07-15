@@ -42,7 +42,7 @@ export interface RoundRow {
   name: string
   start_date: string
   end_date: string
-  status: 'open' | 'closed'
+  status: 'upcoming' | 'open' | 'closed'
 }
 
 export interface WeekRow {

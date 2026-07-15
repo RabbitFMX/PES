@@ -116,11 +116,14 @@ through `mountProtected`.
 - `GET /api/leaderboard` — live standings across both divisions ✅ (chunk 8)
 - `GET /api/stats` — personal stats and history ✅ (chunk 9)
 - `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` ✅ (chunk 10)
-- Admin (`GET /api/admin/...`, admin-only):
+- Admin (`GET /api/admin/...`, admin-only) ✅ (chunk 11): every mutating admin
+  endpoint returns the uniform `{ ok: true } | { ok: false, message }`
+  (validation failures included, so the frontend toasts them without a throw);
+  the whole admin router is mounted once behind `requireAdmin`.
   - members: `GET /api/admin/members`, `POST /api/admin/members/invite`, `PATCH /api/admin/members/:id`
   - activities: `GET /api/admin/activities`, `POST /api/admin/activities`, `PATCH /api/admin/activities/:id`
   - rounds: `GET /api/admin/rounds`, `POST /api/admin/rounds`, `PATCH /api/admin/rounds/:id`
-  - challenge rotation: `GET /api/admin/rotation`, `PUT /api/admin/rotation` (chunk 11)
+  - challenge rotation: `GET /api/admin/rotation`, `PUT /api/admin/rotation`
 
 A weekly-status endpoint for the n8n nudge workflow (brief §20) is planned but
 not yet scoped into a chunk.
@@ -131,7 +134,11 @@ The full model is brief §13. The SQL lives in `../supabase/migrations`
 (`20260714120000_init_schema.sql`, then `20260714130000_log_entry_quickadd.sql`
 which makes `log_entry.activity_id` nullable for quick-add entries, then
 `20260715120000_challenge_bonus_split.sql` which adds the optional
-`challenge.bonus_split` custom placement points) and
+`challenge.bonus_split` custom placement points, then
+`20260715130000_round_upcoming_status.sql` which lets `round.status` be
+`upcoming` (admin creates the next round before it opens), then
+`20260715140000_set_challenge_rotation_fn.sql` which adds an atomic
+`set_challenge_rotation(uuid[])` function for the rotation PUT) and
 reference data in `../supabase/seed.sql`;
 apply both with `npm run db:migrate && npm run db:seed`. **Keep this section in
 sync as new migrations land.** Tables are snake_case
@@ -162,7 +169,9 @@ Entities:
   bonuses and, separately, `stroller_base_rate_override` for activities whose
   base rate changes with a stroller), and `is_tiered` + `tier_options` (JSON)
   for preset-dropdown activities.
-- **Round** — a half-year competition period (`start_date`, `end_date`, `status`).
+- **Round** — a half-year competition period (`start_date`, `end_date`,
+  `status` — `upcoming` / `open` / `closed`; opening/closing is a manual admin
+  action for MVP).
 - **Week** — a week within a round (`round_id`, `week_number`, dates); the unit
   the 100-point goal is measured against.
 - **LogEntry** — one logged activity: `member_id`, `week_id`, `activity_id`,

@@ -1,6 +1,7 @@
 import cors from 'cors'
 import express from 'express'
 import { activitiesRouter } from './routes/activities'
+import { adminRouter } from './routes/admin'
 import { challengesRouter } from './routes/challenges'
 import { dashboardRouter } from './routes/dashboard'
 import { healthRouter } from './routes/health'
@@ -32,6 +33,9 @@ export function createApp() {
   mountProtected(app, '/api', leaderboardRouter)
   mountProtected(app, '/api', statsRouter)
   mountProtected(app, '/api', challengesRouter)
+
+  // Admin routes: same auth, plus the admin-role guard.
+  mountProtected(app, '/api', adminRouter, { admin: true })
 
   // Error handler last.
   app.use(errorHandler)

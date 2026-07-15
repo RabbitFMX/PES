@@ -24,3 +24,75 @@ export async function listActiveMembers(client: Supabase = supabase): Promise<Me
   if (error) throw error
   return (data ?? []) as MemberRow[]
 }
+
+/** Every member, including those who have `left` (admin roster). */
+export async function listAllMembers(client: Supabase = supabase): Promise<MemberRow[]> {
+  const { data, error } = await client.from('member').select('*').order('name', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as MemberRow[]
+}
+
+/** A member by email, or null — used to reject duplicate invites. */
+export async function getMemberByEmail(
+  email: string,
+  client: Supabase = supabase,
+): Promise<MemberRow | null> {
+  const { data, error } = await client.from('member').select('*').eq('email', email).maybeSingle()
+
+  if (error) throw error
+  return (data as MemberRow | null) ?? null
+}
+
+/**
+ * Send a Supabase Auth invite for an email and return the created auth user id
+ * (which becomes `member.id`). Uses the service-role admin API — invite-only
+ * onboarding, §11. Kept here so the service/routes stay Supabase-agnostic and
+ * tests can mock it.
+ */
+export async function inviteAuthUser(
+  email: string,
+  client: Supabase = supabase,
+): Promise<{ userId: string }> {
+  const { data, error } = await client.auth.admin.inviteUserByEmail(email)
+  if (error) throw error
+  if (!data.user) throw new Error('invite did not return a user')
+  return { userId: data.user.id }
+}
+
+/** Insert a member row (the id is the Supabase auth.users id from the invite). */
+export async function insertMember(
+  row: MemberRow,
+  client: Supabase = supabase,
+): Promise<MemberRow> {
+  const { data, error } = await client.from('member').insert(row).select('*').single()
+
+  if (error) throw error
+  return data as MemberRow
+}
+
+/** Fields an admin may edit on a member. */
+export interface MemberUpdate {
+  division?: 'A' | 'B'
+  coefficient?: number
+  role?: 'member' | 'admin'
+  status?: 'active' | 'left'
+  injury_exempt_until?: string | null
+}
+
+/** Update editable member fields; returns the updated row (null if no such id). */
+export async function updateMember(
+  id: string,
+  patch: MemberUpdate,
+  client: Supabase = supabase,
+): Promise<MemberRow | null> {
+  const { data, error } = await client
+    .from('member')
+    .update(patch)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle()
+
+  if (error) throw error
+  return (data as MemberRow | null) ?? null
+}

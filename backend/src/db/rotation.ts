@@ -26,3 +26,13 @@ export async function getRotation(client: Supabase = supabase): Promise<Rotation
     orderPosition: r.order_position,
   }))
 }
+
+/**
+ * Replace the whole rotation with the given member ids, in order (0-based
+ * positions). Runs atomically via the `set_challenge_rotation` SQL function
+ * (chunk 11 migration) so there is never a partial write.
+ */
+export async function putRotation(memberIds: string[], client: Supabase = supabase): Promise<void> {
+  const { error } = await client.rpc('set_challenge_rotation', { p_member_ids: memberIds })
+  if (error) throw error
+}

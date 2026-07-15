@@ -30,3 +30,42 @@ export async function getActivity(
   if (error) throw error
   return (data as ActivityRow | null) ?? null
 }
+
+/** Every activity, including inactive — the admin rate-table editor. */
+export async function listAllActivities(client: Supabase = supabase): Promise<ActivityRow[]> {
+  const { data, error } = await client
+    .from('activity')
+    .select('*')
+    .order('name_cs', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as ActivityRow[]
+}
+
+/** Insert a new activity row and return it. */
+export async function insertActivity(
+  row: ActivityRow,
+  client: Supabase = supabase,
+): Promise<ActivityRow> {
+  const { data, error } = await client.from('activity').insert(row).select('*').single()
+
+  if (error) throw error
+  return data as ActivityRow
+}
+
+/** Update an activity by id; returns the updated row (null if no such id). */
+export async function updateActivity(
+  id: string,
+  patch: Partial<Omit<ActivityRow, 'id'>>,
+  client: Supabase = supabase,
+): Promise<ActivityRow | null> {
+  const { data, error } = await client
+    .from('activity')
+    .update(patch)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle()
+
+  if (error) throw error
+  return (data as ActivityRow | null) ?? null
+}

@@ -30,6 +30,46 @@ export async function listRounds(client: Supabase = supabase): Promise<RoundRow[
   return (data ?? []) as RoundRow[]
 }
 
+/** Columns supplied when creating a round (DB fills id). */
+export type NewRound = Omit<RoundRow, 'id'>
+
+/** Insert a round and return the saved row. */
+export async function insertRound(row: NewRound, client: Supabase = supabase): Promise<RoundRow> {
+  const { data, error } = await client
+    .from('round')
+    .insert(row)
+    .select('id, name, start_date, end_date, status')
+    .single()
+
+  if (error) throw error
+  return data as RoundRow
+}
+
+/** Fields an admin may edit on a round (status is the open/close switch). */
+export interface RoundUpdate {
+  name?: string
+  start_date?: string
+  end_date?: string
+  status?: 'upcoming' | 'open' | 'closed'
+}
+
+/** Update a round by id; returns the updated row (null if no such id). */
+export async function updateRound(
+  id: string,
+  patch: RoundUpdate,
+  client: Supabase = supabase,
+): Promise<RoundRow | null> {
+  const { data, error } = await client
+    .from('round')
+    .update(patch)
+    .eq('id', id)
+    .select('id, name, start_date, end_date, status')
+    .maybeSingle()
+
+  if (error) throw error
+  return (data as RoundRow | null) ?? null
+}
+
 /** Every recorded member↔round division (across all rounds). */
 export async function listAllMemberRoundDivisions(
   client: Supabase = supabase,
