@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import { getRotation, saveRotation } from '../../lib/mockApi'
+import { getRotation, saveRotation } from '../../lib/api'
 import type { RotationEntry } from '../../lib/types'
 import { useToast } from '../../context/toast'
 import { Card } from '../../components/ui/Card'

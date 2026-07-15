@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import { getLeaderboard } from '../../lib/mockApi'
+import { getLeaderboard } from '../../lib/api'
 import { formatPoints } from '../../lib/format'
 import { cn } from '../../lib/cn'
 import type { LeaderboardData, LeaderboardRow } from '../../lib/types'

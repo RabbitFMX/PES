@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { commitEntries } from '../../lib/mockApi'
+import { commitEntries } from '../../lib/api'
 import type { LogMode, LogPreview } from '../../lib/types'
 import { useToast } from '../../context/toast'
 import { Modal } from '../../components/ui/Modal'

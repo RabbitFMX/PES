@@ -1,7 +1,8 @@
 /**
  * Shared UI-facing types. These describe the shape of data the frontend
- * renders and expects to receive — NOT the database schema. Every network
- * call is currently served by mockApi.ts; see each "TODO: connect to API".
+ * renders and expects to receive — NOT the database schema. Network calls go
+ * through `lib/api.ts` (real backend), except the natural-language parse, which
+ * stays a local mock until the LLM lands (seminar 6).
  */
 
 export type Division = 'A' | 'B'
@@ -63,6 +64,12 @@ export interface LogPreview {
   rawPoints: number
   coefficient: number
   finalPoints: number
+  /**
+   * The source input this preview was computed from. Carried so `commitEntries`
+   * can POST the original input to the backend (which recomputes points) — the
+   * display fields alone can't reconstruct it. Optional and ignored by the UI.
+   */
+  input?: LogInput
 }
 
 export interface DetailedLogInput {
@@ -78,6 +85,7 @@ export interface QuickAddInput {
   points: number
   note?: string
 }
+export type LogInput = DetailedLogInput | QuickAddInput
 
 export interface LeaderboardRow {
   memberId: string

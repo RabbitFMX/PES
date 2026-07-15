@@ -5,6 +5,31 @@ import i18n from '../../i18n'
 import { ToastProvider } from '../../context/ToastProvider'
 import { LogActivityModal } from './LogActivityModal'
 
+// Mock the data layer so the modal's preview → commit flow runs without a
+// live backend.
+vi.mock('../../lib/api', () => ({
+  // The modal opens in Detailed mode, which loads the activity list on mount.
+  getActivities: async () => [],
+  previewDetailed: async () => ({
+    activityName: 'běh',
+    quantity: 1,
+    unit: 'km',
+    rawPoints: 3,
+    coefficient: 1.25,
+    finalPoints: 3.75,
+  }),
+  previewQuickAdd: async (input: { points: number }) => ({
+    activityName: 'Rychlý zápis',
+    quantity: input.points,
+    unit: 'pts',
+    rawPoints: input.points,
+    coefficient: 1.25,
+    finalPoints: input.points * 1.25,
+    input,
+  }),
+  commitEntries: async () => ({ weeklyPoints: 50 }),
+}))
+
 function renderModal(onClose = vi.fn()) {
   render(
     <ToastProvider>

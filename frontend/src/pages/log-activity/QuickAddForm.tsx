@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { previewQuickAdd } from '../../lib/mockApi'
+import { previewQuickAdd } from '../../lib/api'
 import type { LogPreview } from '../../lib/types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'

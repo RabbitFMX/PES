@@ -12,7 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import { useAsync } from '../../lib/useAsync'
-import { getRounds, getStats } from '../../lib/mockApi'
+import { getRounds, getStats } from '../../lib/api'
 import { formatDate, formatPoints } from '../../lib/format'
 import type { Round, StatsData } from '../../lib/types'
 import { Card } from '../../components/ui/Card'

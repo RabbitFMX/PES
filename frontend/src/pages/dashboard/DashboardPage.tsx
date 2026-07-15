@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import { getDashboard } from '../../lib/mockApi'
+import { getDashboard } from '../../lib/api'
 import { formatPoints } from '../../lib/format'
 import { useLogActivity } from '../../context/logActivity'
 import type { DashboardData } from '../../lib/types'

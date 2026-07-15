@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import { getAdminActivities, saveActivity } from '../../lib/mockApi'
+import { getAdminActivities, saveActivity } from '../../lib/api'
 import type { Activity } from '../../lib/types'
 import { useToast } from '../../context/toast'
 import { Badge } from '../../components/ui/Badge'

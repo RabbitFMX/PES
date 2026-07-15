@@ -1,12 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import {
-  createChallenge,
-  getChallenge,
-  getPastChallenges,
-  submitChallenge,
-} from '../../lib/mockApi'
+import { createChallenge, getChallenge, getPastChallenges, submitChallenge } from '../../lib/api'
 import { formatPoints } from '../../lib/format'
 import type { ChallengeData, PastChallenge } from '../../lib/types'
 import { useToast } from '../../context/toast'

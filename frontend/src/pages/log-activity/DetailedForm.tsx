@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import { getActivities, previewDetailed } from '../../lib/mockApi'
+import { getActivities, previewDetailed } from '../../lib/api'
 import type { Activity, LogPreview } from '../../lib/types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'

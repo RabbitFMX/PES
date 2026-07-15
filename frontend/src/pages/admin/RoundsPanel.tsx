@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import { getRounds, saveRound } from '../../lib/mockApi'
+import { getRounds, saveRound } from '../../lib/api'
 import type { Round } from '../../lib/types'
 import { useToast } from '../../context/toast'
 import { Card } from '../../components/ui/Card'

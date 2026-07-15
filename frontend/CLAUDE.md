@@ -11,11 +11,15 @@ friend group's sport-activity competition (weekly 100-point goal, two divisions,
 rounds, rotating challenges). This is the whole user-facing app — dashboard,
 activity logging, leaderboard, stats, challenges, admin, profile.
 
-**Phase 1 (current): the app runs entirely on mock data.** There is no backend
-yet. Every server interaction goes through a single mock layer
-(`src/lib/mockApi.ts`) where each function is marked `TODO: connect to API` and
-returns the exact shape the real endpoint will return. Swapping to the real API
-means reimplementing that one file (plus wiring auth), nothing else.
+**The app now runs against the real backend.** Every server interaction goes
+through a single data layer (`src/lib/api.ts`), a thin wrapper over the
+`/api/*` endpoints via `src/lib/apiClient.ts` (which attaches the Supabase JWT
+and throws `ApiError` on non-2xx). Login uses real Supabase Auth
+(`src/lib/supabase.ts`), wired in `AuthProvider`. The **only** remaining mock is
+`parseNaturalLanguage` (natural-language logging), deferred to the LLM seminar
+and marked `TODO: LLM API (seminar 6)`; it keeps a demoable success/failure
+path. Config comes from `VITE_API_BASE_URL` / `VITE_SUPABASE_URL` /
+`VITE_SUPABASE_ANON_KEY` (see `.env.example`; real values in a gitignored `.env`).
 
 ## Tech stack
 
@@ -53,9 +57,11 @@ src/
 ├── App.tsx               # route tree + guards; lazy-loads the Stats route
 ├── styles/theme.css      # DESIGN SYSTEM: CSS-variable tokens, light/dark, focus ring
 ├── lib/
-│   ├── mockApi.ts        # THE mock backend — every call marked TODO: connect to API
+│   ├── api.ts            # THE data layer — real `/api/*` calls (NL parse still mock)
+│   ├── apiClient.ts      # fetch wrapper: base URL + Supabase JWT + ApiError
+│   ├── supabase.ts       # Supabase Auth client (email+password)
 │   ├── types.ts          # shared UI-facing types (the data shapes screens render)
-│   ├── mockPoints.ts     # points calculation used by the mock (brief §13/§14)
+│   ├── mockPoints.ts     # points calc used only by the deferred NL-parse mock (brief §13/§14)
 │   ├── useAsync.ts       # loading/error/reload hook every data screen uses
 │   ├── format.ts, cn.ts  # pure helpers
 ├── context/              # providers, split into hook (.ts) + provider (.tsx):
@@ -74,9 +80,10 @@ src/
 - **Design system lives in two places only:** `styles/theme.css` (tokens) and
   `components/ui/` (primitives). Screens compose these; they do not invent
   styles.
-- **All mock data is in `lib/mockApi.ts`.** Do not scatter fixtures into
-  components.
-- Tests are colocated (`*.test.ts[x]` next to the code).
+- **All backend access is in `lib/api.ts`.** Do not scatter fetch calls or
+  fixtures into components.
+- Tests are colocated (`*.test.ts[x]` next to the code); tests mock `lib/api`
+  (and `lib/supabase` for auth) rather than hitting the network.
 
 ## Conventions
 
@@ -91,8 +98,9 @@ src/
 - **Data fetching:** use the `useAsync` hook; render explicit loading
   (Skeleton), empty (EmptyState), and error (ErrorState + retry) states for
   every data-driven screen.
-- **Backend calls:** only ever via `lib/mockApi.ts`. When adding one, add it
-  there with a `// TODO: connect to API` comment and a typed return shape.
+- **Backend calls:** only ever via `lib/api.ts` (through `apiClient`). When
+  adding one, add a typed function there mapping to its `/api/*` endpoint; keep
+  signatures aligned with what screens expect.
 - **i18n:** no hard-coded user-facing strings — add keys to `i18n/cs.json` and
   `i18n/en.json` (keep both in sync) and use `t('…')`.
 - **Accessibility:** real `<label>`s for inputs; `aria-label` on icon-only
