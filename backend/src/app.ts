@@ -3,6 +3,7 @@ import express from 'express'
 import { activitiesRouter } from './routes/activities'
 import { dashboardRouter } from './routes/dashboard'
 import { healthRouter } from './routes/health'
+import { leaderboardRouter } from './routes/leaderboard'
 import { logEntriesRouter } from './routes/logEntries'
 import { meRouter } from './routes/me'
 import { mountProtected } from './middleware/auth'
@@ -26,6 +27,7 @@ export function createApp() {
   mountProtected(app, '/api', activitiesRouter)
   mountProtected(app, '/api', logEntriesRouter)
   mountProtected(app, '/api', dashboardRouter)
+  mountProtected(app, '/api', leaderboardRouter)
 
   // Error handler last.
   app.use(errorHandler)
