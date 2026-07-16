@@ -130,6 +130,54 @@ export async function listMemberEntriesDetailed(
 }
 
 /**
+ * Every DETAILED entry (activity_id present) across all members, with the
+ * activity's names — for per-member "strongest activities" / signature titles.
+ * Quick-add entries (null activity_id, e.g. the imported weekly totals) are
+ * excluded by the inner join, so these stats fill only from real logged
+ * activities going forward. Paginated (PostgREST caps at 1000).
+ */
+export async function listDetailedActivityPoints(
+  client: Supabase = supabase,
+): Promise<
+  { member_id: string; activity_id: string; name_cs: string; name_en: string; final_points: number }[]
+> {
+  const PAGE = 1000
+  type Row = {
+    member_id: string
+    final_points: number
+    activity_id: string
+    activity: { name_cs: string; name_en: string } | null
+  }
+  const out: {
+    member_id: string
+    activity_id: string
+    name_cs: string
+    name_en: string
+    final_points: number
+  }[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await client
+      .from('log_entry')
+      .select('member_id, final_points, activity_id, activity!inner(name_cs, name_en)')
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    const rows = (data ?? []) as unknown as Row[]
+    for (const r of rows) {
+      out.push({
+        member_id: r.member_id,
+        activity_id: r.activity_id,
+        name_cs: r.activity?.name_cs ?? '',
+        name_en: r.activity?.name_en ?? '',
+        final_points: Number(r.final_points),
+      })
+    }
+    if (rows.length < PAGE) break
+  }
+  return out
+}
+
+/**
  * Whether the member already logged an identical entry (same activity, quantity
  * and date). Used for the soft duplicate warning — the new entry is still
  * saved, but the UI flags it.

@@ -38,6 +38,13 @@ export interface DashboardData {
 
 /* ---- Whole-pack comparison stats (Statistiky tab) ---- */
 
+export interface PackTopActivity {
+  activityId: string
+  nameCs: string
+  nameEn: string
+  points: number
+}
+
 export interface PackAllTimeRow {
   memberId: string
   displayName: string
@@ -46,6 +53,7 @@ export interface PackAllTimeRow {
   lifetimePoints: number
   roundsPlayed: number
   wins: number
+  topActivities: PackTopActivity[]
 }
 
 export interface PackRoundRow {

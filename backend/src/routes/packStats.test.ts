@@ -10,11 +10,12 @@ const listRounds = vi.hoisted(() => vi.fn())
 const listWeeks = vi.hoisted(() => vi.fn())
 const listAllMembers = vi.hoisted(() => vi.fn())
 const listRoundEntries = vi.hoisted(() => vi.fn())
+const listDetailedActivityPoints = vi.hoisted(() => vi.fn())
 
 vi.mock('../db/rounds', () => ({ listRounds }))
 vi.mock('../db/weeks', () => ({ listWeeks }))
 vi.mock('../db/members', () => ({ listAllMembers }))
-vi.mock('../db/logEntries', () => ({ listRoundEntries }))
+vi.mock('../db/logEntries', () => ({ listRoundEntries, listDetailedActivityPoints }))
 
 function member(id: string, division: 'A' | 'B'): MemberRow {
   return {
@@ -54,6 +55,10 @@ beforeEach(() => {
     { member_id: 'alice', week_id: 'w2', final_points: 30 },
     { member_id: 'bob', week_id: 'w2', final_points: 40 },
   ])
+  listDetailedActivityPoints.mockResolvedValue([
+    { member_id: 'alice', activity_id: 'run', name_cs: 'běh', name_en: 'Running', final_points: 20 },
+    { member_id: 'alice', activity_id: 'swim', name_cs: 'plavání', name_en: 'Swim', final_points: 10 },
+  ])
 })
 
 describe('GET /api/pack-stats', () => {
@@ -78,5 +83,11 @@ describe('GET /api/pack-stats', () => {
     // compare matrix aligned to rounds order
     const alice = res.body.roundTotals.find((m: { memberId: string }) => m.memberId === 'alice')
     expect(alice.totals).toEqual([100, 30])
+
+    // strongest activities (detailed entries): run (20) ahead of swim (10)
+    const aliceAllTime = res.body.allTime.find((m: { memberId: string }) => m.memberId === 'alice')
+    expect(aliceAllTime.topActivities.map((a: { activityId: string }) => a.activityId)).toEqual(['run', 'swim'])
+    const bobAllTime = res.body.allTime.find((m: { memberId: string }) => m.memberId === 'bob')
+    expect(bobAllTime.topActivities).toEqual([])
   })
 })

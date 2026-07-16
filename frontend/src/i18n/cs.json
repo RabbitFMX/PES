@@ -132,7 +132,23 @@
     "winners": "Vítězové kol",
     "compare": "Porovnání členů",
     "compareHint": "Vyber až {{max}} členy pro porovnání",
-    "comparePick": "Vyber členy pro porovnání"
+    "comparePick": "Vyber členy pro porovnání",
+    "pes": {
+      "runner": "PES běžec",
+      "swimmer": "PES plavec",
+      "hiker": "PES turista",
+      "cyclist": "PES cyklista",
+      "xcskier": "PES běžkař",
+      "skimo": "PES skialpinista",
+      "skier": "PES lyžař",
+      "skater": "PES bruslař",
+      "paddler": "PES pádlař",
+      "kayaker": "PES vodák",
+      "strong": "PES silák",
+      "athlete": "PES sportovec",
+      "rookie": "PES nováček"
+    },
+    "searchMember": "Hledat člena…"
   },
   "challenges": {
     "title": "Výzvy",

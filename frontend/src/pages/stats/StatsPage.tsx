@@ -14,10 +14,11 @@ import {
 import { useAsync } from '../../lib/useAsync'
 import { getPackStats } from '../../lib/api'
 import { formatPoints } from '../../lib/format'
-import type { PackStats } from '../../lib/types'
+import type { PackAllTimeRow, PackStats } from '../../lib/types'
 import { Card } from '../../components/ui/Card'
 import { Avatar } from '../../components/ui/Avatar'
 import { Badge } from '../../components/ui/Badge'
+import { Input } from '../../components/ui/Input'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorState } from '../../components/ui/ErrorState'
@@ -40,6 +41,49 @@ const tooltip = {
 /** "R11 — Zima/Jaro 2026" → "R11" for compact axes. */
 function shortRound(name: string): string {
   return name.split('—')[0].trim() || name
+}
+
+function medal(rank: number): string | null {
+  return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null
+}
+
+// Map an activity id to a "PES <role>" signature key.
+const PES_CATEGORY: Record<string, string> = {
+  run: 'runner',
+  swim: 'swimmer',
+  hike: 'hiker',
+  'bike-road': 'cyclist',
+  'bike-gravel': 'cyclist',
+  'bike-mtb': 'cyclist',
+  'bike-stroller': 'cyclist',
+  xcski: 'xcskier',
+  skitour: 'skimo',
+  downhill: 'skier',
+  skates: 'skater',
+  paddleboard: 'paddler',
+  kayak: 'kayaker',
+}
+const STRONG = new Set([
+  'pushups',
+  'squats',
+  'situps',
+  'pullups',
+  'dips',
+  'burpees',
+  'burpees-pushup',
+  'plank',
+  'plank-sally',
+  'lunges',
+  'mountain-climber',
+  'hip-raises',
+  'hanging-leg-raises',
+  'jumprope',
+  'tabata',
+  'sun-salutation',
+  'vups',
+])
+function pesCategory(id: string): string {
+  return PES_CATEGORY[id] ?? (STRONG.has(id) ? 'strong' : 'athlete')
 }
 
 export function StatsPage() {
@@ -67,16 +111,20 @@ export function StatsPage() {
 }
 
 function PackBody({ data }: { data: PackStats }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language.startsWith('en') ? 'en' : 'cs'
   const top = data.allTime.slice(0, 12)
   const barData = [...top].reverse().map((m) => ({ name: m.displayName, points: m.lifetimePoints }))
-  const roundData = data.rounds.map((r) => ({
-    round: shortRound(r.name),
-    points: r.groupTotal,
-    participants: r.participants,
-  }))
+  const roundData = data.rounds.map((r) => ({ round: shortRound(r.name), points: r.groupTotal }))
 
-  // Compare: default to the top 3 members.
+  const pesTitle = (m: PackAllTimeRow) =>
+    m.topActivities.length === 0
+      ? t('stats.pes.rookie')
+      : t(`stats.pes.${pesCategory(m.topActivities[0].activityId)}`)
+  const actName = (a: { nameCs: string; nameEn: string }) => (lang === 'en' ? a.nameEn : a.nameCs)
+
+  // Compare: pick from ALL members (searchable); default the top 3.
+  const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<string[]>(() =>
     data.allTime.slice(0, 3).map((m) => m.memberId),
   )
@@ -88,6 +136,9 @@ function PackBody({ data }: { data: PackStats }) {
           ? [...cur, id]
           : cur,
     )
+  const filtered = data.allTime.filter((m) =>
+    m.displayName.toLowerCase().includes(query.toLowerCase()),
+  )
   const selectedMembers = useMemo(
     () => selected.map((id) => data.roundTotals.find((m) => m.memberId === id)!).filter(Boolean),
     [selected, data.roundTotals],
@@ -102,9 +153,31 @@ function PackBody({ data }: { data: PackStats }) {
     [data.rounds, selectedMembers],
   )
 
+  // Round-winners accordion → full ranking with medals.
+  const [openRound, setOpenRound] = useState<string | null>(null)
+  const roundRanking = (roundIndex: number) => {
+    const rows = data.roundTotals
+      .map((m) => ({
+        memberId: m.memberId,
+        displayName: m.displayName,
+        total: m.totals[roundIndex],
+      }))
+      .filter((r): r is { memberId: string; displayName: string; total: number } => r.total != null)
+      .sort((a, b) => b.total - a.total)
+    let lastTotal: number | null = null
+    let lastRank = 0
+    return rows.map((r, idx) => {
+      const rank = lastTotal !== null && r.total === lastTotal ? lastRank : idx + 1
+      lastTotal = r.total
+      lastRank = rank
+      return { ...r, rank }
+    })
+  }
+  // rounds are shown newest-first; map back to the chronological index for totals.
+  const chronoIndex = (roundId: string) => data.rounds.findIndex((r) => r.roundId === roundId)
+
   return (
     <div className="flex flex-col gap-6">
-      {/* KPI row */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label={t('stats.kpiRounds')} value={String(data.totals.rounds)} />
         <StatTile label={t('stats.kpiMembers')} value={String(data.totals.members)} />
@@ -112,7 +185,7 @@ function PackBody({ data }: { data: PackStats }) {
         <StatTile label={t('stats.kpiCurrent')} value={data.totals.currentRoundName ?? '—'} />
       </section>
 
-      {/* All-time ranking: chart + table (table = the relief for low-contrast marks) */}
+      {/* All-time ranking: chart + table with signature titles */}
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-text">{t('stats.allTime')}</h2>
         <ResponsiveContainer width="100%" height={Math.max(220, barData.length * 26)}>
@@ -144,13 +217,23 @@ function PackBody({ data }: { data: PackStats }) {
             </thead>
             <tbody>
               {data.allTime.map((m, i) => (
-                <tr key={m.memberId} className="border-b border-border/60">
+                <tr key={m.memberId} className="border-b border-border/60 align-top">
                   <td className="py-2 pr-2 tabular-nums text-muted">{i + 1}</td>
                   <td className="py-2 pr-2">
                     <div className="flex items-center gap-2">
                       <Avatar name={m.displayName} src={m.avatarUrl} size="sm" />
-                      <span className="font-medium text-text">{m.displayName}</span>
-                      <Badge>{m.division}</Badge>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-text">{m.displayName}</span>
+                          <Badge>{m.division}</Badge>
+                        </div>
+                        <div className="text-xs text-primary">🐾 {pesTitle(m)}</div>
+                        {m.topActivities.length > 0 && (
+                          <div className="text-xs text-muted">
+                            {m.topActivities.map((a) => actName(a)).join(' · ')}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="py-2 pr-2 text-right font-medium tabular-nums text-text">
@@ -181,12 +264,20 @@ function PackBody({ data }: { data: PackStats }) {
         </ResponsiveContainer>
       </Card>
 
-      {/* Compare members */}
+      {/* Compare members (all members, searchable) */}
       <Card>
         <h2 className="text-lg font-semibold text-text">{t('stats.compare')}</h2>
         <p className="mb-3 text-xs text-muted">{t('stats.compareHint', { max: MAX_COMPARE })}</p>
-        <div className="mb-4 flex flex-wrap gap-2">
-          {top.map((m) => {
+        <div className="mb-2 max-w-xs">
+          <Input
+            label={t('stats.searchMember')}
+            placeholder={t('stats.searchMember')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <div className="mb-4 flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+          {filtered.map((m) => {
             const on = selected.includes(m.memberId)
             const idx = selected.indexOf(m.memberId)
             return (
@@ -196,7 +287,7 @@ function PackBody({ data }: { data: PackStats }) {
                 onClick={() => toggle(m.memberId)}
                 aria-pressed={on}
                 className={
-                  'rounded-full px-3 py-1 text-sm ring-1 transition-colors ' +
+                  'h-fit rounded-full px-3 py-1 text-sm ring-1 transition-colors ' +
                   (on ? 'text-text ring-transparent' : 'text-muted ring-border hover:text-text')
                 }
                 style={
@@ -234,7 +325,6 @@ function PackBody({ data }: { data: PackStats }) {
                 ))}
               </LineChart>
             </ResponsiveContainer>
-            {/* Legend in text ink with colour swatches (identity never colour-only) */}
             <ul className="mt-3 flex flex-wrap gap-4">
               {selectedMembers.map((m, idx) => (
                 <li key={m.memberId} className="flex items-center gap-2 text-sm text-text">
@@ -251,29 +341,58 @@ function PackBody({ data }: { data: PackStats }) {
         )}
       </Card>
 
-      {/* Round winners */}
+      {/* Round winners — expand to the full ranking with medals */}
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-text">{t('stats.winners')}</h2>
-        <ul className="flex flex-col gap-1">
-          {[...data.rounds].reverse().map((r) => (
-            <li
-              key={r.roundId}
-              className="flex items-center justify-between border-b border-border/60 py-2 text-sm last:border-0"
-            >
-              <span className="text-muted">{shortRound(r.name)}</span>
-              <span className="flex items-center gap-2 text-text">
-                {r.winner ? (
-                  <>
-                    <span aria-hidden="true">🏆</span>
-                    <span className="font-medium">{r.winner.displayName}</span>
-                    <span className="tabular-nums text-muted">{formatPoints(r.winner.total)}</span>
-                  </>
-                ) : (
-                  <span className="text-muted">—</span>
+        <ul className="flex flex-col">
+          {[...data.rounds].reverse().map((r) => {
+            const isOpen = openRound === r.roundId
+            return (
+              <li key={r.roundId} className="border-b border-border/60 last:border-0">
+                <button
+                  type="button"
+                  onClick={() => setOpenRound(isOpen ? null : r.roundId)}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-center justify-between py-2 text-left text-sm"
+                >
+                  <span className="flex items-center gap-2 text-muted">
+                    <span aria-hidden="true" className="text-xs">
+                      {isOpen ? '▾' : '▸'}
+                    </span>
+                    {shortRound(r.name)}
+                  </span>
+                  <span className="flex items-center gap-2 text-text">
+                    {r.winner ? (
+                      <>
+                        <span aria-hidden="true">🏆</span>
+                        <span className="font-medium">{r.winner.displayName}</span>
+                        <span className="tabular-nums text-muted">
+                          {formatPoints(r.winner.total)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </span>
+                </button>
+                {isOpen && (
+                  <ol className="mb-3 flex flex-col gap-1 pl-6">
+                    {roundRanking(chronoIndex(r.roundId)).map((row) => (
+                      <li key={row.memberId} className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2">
+                          <span className="w-6 tabular-nums text-muted">
+                            {medal(row.rank) ?? `${row.rank}.`}
+                          </span>
+                          <span className="text-text">{row.displayName}</span>
+                        </span>
+                        <span className="tabular-nums text-muted">{formatPoints(row.total)}</span>
+                      </li>
+                    ))}
+                  </ol>
                 )}
-              </span>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       </Card>
     </div>

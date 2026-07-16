@@ -132,7 +132,23 @@
     "winners": "Round winners",
     "compare": "Compare members",
     "compareHint": "Pick up to {{max}} members to compare",
-    "comparePick": "Pick members to compare"
+    "comparePick": "Pick members to compare",
+    "pes": {
+      "runner": "PES runner",
+      "swimmer": "PES swimmer",
+      "hiker": "PES hiker",
+      "cyclist": "PES cyclist",
+      "xcskier": "PES XC skier",
+      "skimo": "PES ski-mountaineer",
+      "skier": "PES downhill skier",
+      "skater": "PES skater",
+      "paddler": "PES paddleboarder",
+      "kayaker": "PES kayaker",
+      "strong": "PES strongdog",
+      "athlete": "PES athlete",
+      "rookie": "PES rookie"
+    },
+    "searchMember": "Search member…"
   },
   "challenges": {
     "title": "Challenges",

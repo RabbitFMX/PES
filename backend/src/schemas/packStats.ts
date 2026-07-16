@@ -23,6 +23,15 @@ export const packStatsSchema = z.object({
       lifetimePoints: z.number(),
       roundsPlayed: z.number(),
       wins: z.number(),
+      /** Up to 3 strongest activities by points (from detailed entries only). */
+      topActivities: z.array(
+        z.object({
+          activityId: z.string(),
+          nameCs: z.string(),
+          nameEn: z.string(),
+          points: z.number(),
+        }),
+      ),
     }),
   ),
   /** Rounds in chronological order (oldest first). */
