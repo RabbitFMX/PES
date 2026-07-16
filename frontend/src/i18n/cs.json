@@ -117,7 +117,22 @@
     "pointsOverTime": "Body v čase",
     "routine": "Rutina odhalena",
     "currentWeek": "Tento týden po dnech",
-    "empty": "Statistiky se objeví po prvním týdnu."
+    "empty": "Zatím žádná data.",
+    "subtitle": "Celá smečka — porovnání členů",
+    "kpiRounds": "Kola",
+    "kpiMembers": "Členové",
+    "kpiPoints": "Body celkem",
+    "kpiCurrent": "Aktuální kolo",
+    "allTime": "Pořadí za celou historii",
+    "colMember": "Člen",
+    "colPoints": "Body",
+    "colRounds": "Kola",
+    "colWins": "Výhry",
+    "groupPerRound": "Aktivita smečky podle kol",
+    "winners": "Vítězové kol",
+    "compare": "Porovnání členů",
+    "compareHint": "Vyber až {{max}} členy pro porovnání",
+    "comparePick": "Vyber členy pro porovnání"
   },
   "challenges": {
     "title": "Výzvy",

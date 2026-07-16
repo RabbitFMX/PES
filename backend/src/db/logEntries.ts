@@ -47,13 +47,23 @@ export async function listRoundEntries(
 ): Promise<{ member_id: string; week_id: string; final_points: number }[]> {
   if (weekIds.length === 0) return []
 
-  const { data, error } = await client
-    .from('log_entry')
-    .select('member_id, week_id, final_points')
-    .in('week_id', weekIds)
+  // PostgREST caps a single response (default 1000 rows); with years of history
+  // a round set easily exceeds that, so page through until a short page arrives.
+  const PAGE = 1000
+  const rows: { member_id: string; week_id: string; final_points: number }[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await client
+      .from('log_entry')
+      .select('member_id, week_id, final_points')
+      .in('week_id', weekIds)
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1)
 
-  if (error) throw error
-  const rows = (data ?? []) as { member_id: string; week_id: string; final_points: number }[]
+    if (error) throw error
+    const page = (data ?? []) as { member_id: string; week_id: string; final_points: number }[]
+    rows.push(...page)
+    if (page.length < PAGE) break
+  }
   // Numeric columns can arrive as strings from the driver — normalise.
   return rows.map((r) => ({ ...r, final_points: Number(r.final_points) }))
 }

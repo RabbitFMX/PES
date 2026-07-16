@@ -17,6 +17,7 @@ import type {
   LeaderboardData,
   LogPreview,
   Member,
+  PackStats,
   PastChallenge,
   QuickAddInput,
   Round,
@@ -50,6 +51,12 @@ export function signup(input: {
 
 export function getDashboard(): Promise<DashboardData> {
   return apiClient.get<DashboardData>('/dashboard')
+}
+
+/* ---- Whole-pack comparison stats (Statistiky tab) ---- */
+
+export function getPackStats(): Promise<PackStats> {
+  return apiClient.get<PackStats>('/pack-stats')
 }
 
 /* ---- Log activity ---- */

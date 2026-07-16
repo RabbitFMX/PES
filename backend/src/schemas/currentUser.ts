@@ -19,6 +19,23 @@ export const currentUserSchema = z.object({
 
 export type CurrentUser = z.infer<typeof currentUserSchema>
 
+/**
+ * PATCH /api/me — the fields a member may change on their OWN profile
+ * (display name, avatar, language/theme prefs). Role/division/coefficient stay
+ * admin-only (see schemas/admin.ts). `avatarUrl` carries either a URL or a
+ * `dog:<style>:<color>:<size>` token from the avatar builder.
+ */
+export const meProfilePatchSchema = z
+  .object({
+    displayName: z.string().min(1).optional(),
+    avatarUrl: z.string().nullable().optional(),
+    languagePref: z.enum(['cs', 'en']).optional(),
+    themePref: z.enum(['light', 'dark']).optional(),
+  })
+  .strict()
+
+export type MeProfilePatch = z.infer<typeof meProfilePatchSchema>
+
 /** Map a DB member row to the camelCase CurrentUser shape (validated). */
 export function toCurrentUser(member: MemberRow): CurrentUser {
   return currentUserSchema.parse({

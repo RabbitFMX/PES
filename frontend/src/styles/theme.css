@@ -24,6 +24,14 @@
   --color-on-accent: #0f172a;
   --color-on-success: #052e1a;
   --color-on-primary: #ffffff;
+
+  /* Chart tokens (validated categorical palette + chrome; see dataviz skill) */
+  --chart-1: #2a78d6;
+  --chart-2: #008300;
+  --chart-3: #e87ba4;
+  --chart-4: #eda100;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #898781;
 }
 
 [data-theme='dark'] {
@@ -41,6 +49,14 @@
   --color-on-accent: #0f172a;
   --color-on-success: #052e1a;
   --color-on-primary: #ffffff;
+
+  /* Chart tokens re-stepped for the dark surface */
+  --chart-1: #3987e5;
+  --chart-2: #008300;
+  --chart-3: #d55181;
+  --chart-4: #c98500;
+  --chart-grid: #2c2c2a;
+  --chart-axis: #898781;
 }
 
 @theme inline {

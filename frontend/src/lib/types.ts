@@ -36,6 +36,46 @@ export interface DashboardData {
   currentChallenge: { id: string; title: string; hasSubmitted: boolean } | null
 }
 
+/* ---- Whole-pack comparison stats (Statistiky tab) ---- */
+
+export interface PackAllTimeRow {
+  memberId: string
+  displayName: string
+  avatarUrl: string | null
+  division: Division
+  lifetimePoints: number
+  roundsPlayed: number
+  wins: number
+}
+
+export interface PackRoundRow {
+  roundId: string
+  name: string
+  status: RoundStatus
+  startDate: string
+  groupTotal: number
+  participants: number
+  winner: { memberId: string; displayName: string; total: number } | null
+}
+
+export interface PackMemberRoundTotals {
+  memberId: string
+  displayName: string
+  totals: (number | null)[]
+}
+
+export interface PackStats {
+  totals: {
+    rounds: number
+    members: number
+    allTimePoints: number
+    currentRoundName: string | null
+  }
+  allTime: PackAllTimeRow[]
+  rounds: PackRoundRow[]
+  roundTotals: PackMemberRoundTotals[]
+}
+
 /**
  * Full activity as held by the (mock) rate table. The Log-activity UI reads a
  * subset; the Admin rate-table editor reads/writes all of it.

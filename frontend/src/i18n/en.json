@@ -117,7 +117,22 @@
     "pointsOverTime": "Points over time",
     "routine": "Routine detected",
     "currentWeek": "This week by day",
-    "empty": "Your stats appear after your first week."
+    "empty": "No data yet.",
+    "subtitle": "The whole pack — members compared",
+    "kpiRounds": "Rounds",
+    "kpiMembers": "Members",
+    "kpiPoints": "Total points",
+    "kpiCurrent": "Current round",
+    "allTime": "All-time ranking",
+    "colMember": "Member",
+    "colPoints": "Points",
+    "colRounds": "Rounds",
+    "colWins": "Wins",
+    "groupPerRound": "Pack activity by round",
+    "winners": "Round winners",
+    "compare": "Compare members",
+    "compareHint": "Pick up to {{max}} members to compare",
+    "comparePick": "Pick members to compare"
   },
   "challenges": {
     "title": "Challenges",
