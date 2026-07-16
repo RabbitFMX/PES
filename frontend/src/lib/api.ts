@@ -13,6 +13,7 @@ import type {
   ChallengeData,
   CurrentUser,
   DashboardData,
+  Lang,
   DetailedLogInput,
   LeaderboardData,
   LogPreview,
@@ -25,6 +26,7 @@ import type {
   Round,
   RotationEntry,
   StatsData,
+  ThemePref,
 } from './types'
 
 /* ---- Auth bootstrap ---- */
@@ -32,6 +34,16 @@ import type {
 /** The current member's profile (backs session bootstrap in AuthProvider). */
 export function getMe(): Promise<CurrentUser> {
   return apiClient.get<CurrentUser>('/me')
+}
+
+/** Update the current member's own profile (name, avatar, prefs); returns the fresh user. */
+export function updateProfile(patch: {
+  displayName?: string
+  avatarUrl?: string | null
+  languagePref?: Lang
+  themePref?: ThemePref
+}): Promise<CurrentUser> {
+  return apiClient.patch<CurrentUser>('/me', patch)
 }
 
 /**

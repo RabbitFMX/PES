@@ -217,7 +217,13 @@
     "light": "Světlý",
     "dark": "Tmavý",
     "toggleTheme": "Přepnout motiv",
-    "saved": "Profil uložen."
+    "saved": "Profil uložen.",
+    "avatarStyle": "Styl psa",
+    "avatarColor": "Barva srsti",
+    "avatarSize": "Velikost",
+    "sizeS": "Malý",
+    "sizeM": "Střední",
+    "sizeL": "Velký"
   },
   "overview": {
     "pts": "b",

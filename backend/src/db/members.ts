@@ -117,3 +117,28 @@ export async function updateMember(
   if (error) throw error
   return (data as MemberRow | null) ?? null
 }
+
+/** Fields a member may change on their OWN profile (PATCH /api/me). */
+export interface MemberProfileUpdate {
+  name?: string
+  avatar_url?: string | null
+  language_pref?: 'cs' | 'en'
+  theme_pref?: 'light' | 'dark'
+}
+
+/** Update the member's own profile fields; returns the updated row (null if no such id). */
+export async function updateMemberProfile(
+  id: string,
+  patch: MemberProfileUpdate,
+  client: Supabase = supabase,
+): Promise<MemberRow | null> {
+  const { data, error } = await client
+    .from('member')
+    .update(patch)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle()
+
+  if (error) throw error
+  return (data as MemberRow | null) ?? null
+}

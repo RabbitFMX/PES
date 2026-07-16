@@ -217,7 +217,13 @@
     "light": "Light",
     "dark": "Dark",
     "toggleTheme": "Toggle theme",
-    "saved": "Profile saved."
+    "saved": "Profile saved.",
+    "avatarStyle": "Dog style",
+    "avatarColor": "Coat colour",
+    "avatarSize": "Size",
+    "sizeS": "Small",
+    "sizeM": "Medium",
+    "sizeL": "Large"
   },
   "overview": {
     "pts": "pts",
