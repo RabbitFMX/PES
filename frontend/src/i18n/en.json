@@ -206,7 +206,13 @@
     "moveDown": "Down",
     "saveSuccess": "Saved.",
     "saveError": "Save failed.",
-    "edit": "Edit"
+    "edit": "Edit",
+    "historical": "History",
+    "merge": "Merge",
+    "mergeInto": "Merge history: {{name}}",
+    "mergeTarget": "Target account",
+    "mergeHint": "This member's history moves to the chosen account; the historical placeholder is removed.",
+    "mergeNoTargets": "No real account available."
   },
   "settings": {
     "title": "Profile & settings",

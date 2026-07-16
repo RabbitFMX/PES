@@ -118,6 +118,74 @@ export async function updateMember(
   return (data as MemberRow | null) ?? null
 }
 
+/**
+ * Move every child record owned by `fromId` to `toId` (the claim/merge tool).
+ * Composite-PK tables (division/bank) and the unique challenge_submission first
+ * drop `from` rows that would collide with existing `to` rows, then reassign the
+ * rest — so merging a historical member into a fresh account is conflict-free.
+ */
+export async function reassignMemberChildRecords(
+  fromId: string,
+  toId: string,
+  client: Supabase = supabase,
+): Promise<void> {
+  const throwOn = (error: unknown) => {
+    if (error) throw error
+  }
+
+  for (const table of ['member_round_division', 'member_round_bank'] as const) {
+    const existing = await client.from(table).select('round_id').eq('member_id', toId)
+    throwOn(existing.error)
+    const roundIds = (existing.data ?? []).map((r) => (r as { round_id: string }).round_id)
+    if (roundIds.length) {
+      throwOn(
+        (await client.from(table).delete().eq('member_id', fromId).in('round_id', roundIds)).error,
+      )
+    }
+    throwOn((await client.from(table).update({ member_id: toId }).eq('member_id', fromId)).error)
+  }
+
+  const subs = await client
+    .from('challenge_submission')
+    .select('challenge_id')
+    .eq('member_id', toId)
+  throwOn(subs.error)
+  const chIds = (subs.data ?? []).map((r) => (r as { challenge_id: string }).challenge_id)
+  if (chIds.length) {
+    throwOn(
+      (
+        await client
+          .from('challenge_submission')
+          .delete()
+          .eq('member_id', fromId)
+          .in('challenge_id', chIds)
+      ).error,
+    )
+  }
+  throwOn(
+    (await client.from('challenge_submission').update({ member_id: toId }).eq('member_id', fromId))
+      .error,
+  )
+
+  throwOn(
+    (await client.from('log_entry').update({ member_id: toId }).eq('member_id', fromId)).error,
+  )
+  throwOn(
+    (
+      await client
+        .from('challenge')
+        .update({ setter_member_id: toId })
+        .eq('setter_member_id', fromId)
+    ).error,
+  )
+}
+
+/** Delete a member row (used after merging a historical member into a real account). */
+export async function deleteMember(id: string, client: Supabase = supabase): Promise<void> {
+  const { error } = await client.from('member').delete().eq('id', id)
+  if (error) throw error
+}
+
 /** Fields a member may change on their OWN profile (PATCH /api/me). */
 export interface MemberProfileUpdate {
   name?: string

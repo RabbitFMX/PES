@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import { getMembers, inviteMember, saveMember } from '../../lib/api'
+import { getMembers, inviteMember, mergeMembers, saveMember } from '../../lib/api'
 import type { Member } from '../../lib/types'
 import { useToast } from '../../context/toast'
 import { Badge } from '../../components/ui/Badge'
@@ -16,6 +16,7 @@ export function MembersPanel() {
   const { t } = useTranslation()
   const { data, loading, error, reload } = useAsync<Member[]>(getMembers)
   const [editing, setEditing] = useState<Member | null>(null)
+  const [merging, setMerging] = useState<Member | null>(null)
   const [inviting, setInviting] = useState(false)
 
   if (loading) return <Skeleton className="h-64" />
@@ -43,7 +44,10 @@ export function MembersPanel() {
             {data.map((mem) => (
               <tr key={mem.id} className="border-b border-border last:border-0">
                 <td className="px-3 py-2">
-                  <div className="font-medium text-text">{mem.displayName}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-text">{mem.displayName}</span>
+                    {mem.isHistorical && <Badge variant="neutral">{t('admin.historical')}</Badge>}
+                  </div>
                   <div className="text-xs text-muted">{mem.email}</div>
                 </td>
                 <td className="px-3 py-2">{mem.division}</td>
@@ -56,7 +60,12 @@ export function MembersPanel() {
                     {mem.status}
                   </Badge>
                 </td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  {mem.isHistorical && (
+                    <Button variant="ghost" size="sm" onClick={() => setMerging(mem)}>
+                      {t('admin.merge')}
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => setEditing(mem)}>
                     {t('admin.edit')}
                   </Button>
@@ -69,6 +78,14 @@ export function MembersPanel() {
 
       {editing && (
         <EditMemberModal member={editing} onClose={() => setEditing(null)} onSaved={reload} />
+      )}
+      {merging && (
+        <MergeModal
+          historical={merging}
+          members={data}
+          onClose={() => setMerging(null)}
+          onMerged={reload}
+        />
       )}
       {inviting && <InviteModal onClose={() => setInviting(false)} />}
     </div>
@@ -164,6 +181,73 @@ function EditMemberModal({
           value={form.injuryExemptUntil ?? ''}
           onChange={(e) => setForm({ ...form, injuryExemptUntil: e.target.value || null })}
         />
+      </div>
+    </Modal>
+  )
+}
+
+function MergeModal({
+  historical,
+  members,
+  onClose,
+  onMerged,
+}: {
+  historical: Member
+  members: Member[]
+  onClose: () => void
+  onMerged: () => void
+}) {
+  const { t } = useTranslation()
+  const { showToast } = useToast()
+  const targets = members.filter((m) => !m.isHistorical && m.id !== historical.id)
+  const [targetId, setTargetId] = useState(targets[0]?.id ?? '')
+  const [busy, setBusy] = useState(false)
+
+  async function doMerge() {
+    if (!targetId) return
+    setBusy(true)
+    try {
+      const res = await mergeMembers(targetId, historical.id)
+      if (res.ok) {
+        showToast({ message: t('admin.saveSuccess'), variant: 'success' })
+        onClose()
+        onMerged()
+      } else {
+        showToast({ message: res.message, variant: 'error' })
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={t('admin.mergeInto', { name: historical.displayName })}
+      footer={
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={onClose} fullWidth>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={doMerge} loading={busy} disabled={!targetId} fullWidth>
+            {t('admin.merge')}
+          </Button>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-muted">{t('admin.mergeHint')}</p>
+        {targets.length === 0 ? (
+          <p className="text-sm text-danger">{t('admin.mergeNoTargets')}</p>
+        ) : (
+          <Select
+            label={t('admin.mergeTarget')}
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            options={targets.map((m) => ({ value: m.id, label: `${m.displayName} (${m.email})` }))}
+          />
+        )}
       </div>
     </Modal>
   )

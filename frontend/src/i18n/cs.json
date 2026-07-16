@@ -206,7 +206,13 @@
     "moveDown": "Dolů",
     "saveSuccess": "Uloženo.",
     "saveError": "Uložení se nezdařilo.",
-    "edit": "Upravit"
+    "edit": "Upravit",
+    "historical": "Historie",
+    "merge": "Sloučit",
+    "mergeInto": "Sloučit historii: {{name}}",
+    "mergeTarget": "Cílový účet",
+    "mergeHint": "Historie tohoto člena se přesune do vybraného účtu a historický záznam se odstraní.",
+    "mergeNoTargets": "Žádný reálný účet k dispozici."
   },
   "settings": {
     "title": "Profil a nastavení",

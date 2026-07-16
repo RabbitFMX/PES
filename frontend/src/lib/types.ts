@@ -261,6 +261,7 @@ export interface Member {
   role: Role
   status: MemberStatus
   injuryExemptUntil: string | null
+  isHistorical: boolean
 }
 
 export type RoundStatus = 'upcoming' | 'open' | 'closed'

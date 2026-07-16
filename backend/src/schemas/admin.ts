@@ -22,6 +22,7 @@ export const memberSchema = z.object({
   role: z.enum(['member', 'admin']),
   status: z.enum(['active', 'left']),
   injuryExemptUntil: z.string().nullable(),
+  isHistorical: z.boolean(),
 })
 
 export type Member = z.infer<typeof memberSchema>
@@ -36,10 +37,18 @@ export function toMember(row: MemberRow): Member {
     role: row.role,
     status: row.status,
     injuryExemptUntil: row.injury_exempt_until,
+    isHistorical: row.is_historical ?? false,
   })
 }
 
 export const memberInviteSchema = z.object({ email: z.string().email() }).strict()
+
+/** POST /api/admin/members/merge — fold a historical member into a real account. */
+export const memberMergeSchema = z
+  .object({ targetId: z.string().min(1), historicalId: z.string().min(1) })
+  .strict()
+
+export type MemberMergeInput = z.infer<typeof memberMergeSchema>
 
 const coefficientSchema = z.union([z.literal(1), z.literal(1.25)])
 

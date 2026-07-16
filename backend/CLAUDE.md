@@ -113,6 +113,14 @@ through `mountProtected`.
   row (role `member`, division B). The only path that provisions a member
   without an admin; `requireAuth` stays invite-only. ✅
 - `GET /api/me` — the current member's profile ✅ (chunk 4)
+- `PATCH /api/me` — the member updates their OWN name / avatar / language / theme
+  (self-only; avatar carries a `dog:<style>:<color>:<size>` token or a URL) ✅
+- `GET /api/members` — members directory (view-others), ranked by lifetime points ✅
+- `GET /api/members/:id/overview` — any member's personal overview (read-only):
+  weekly snapshot + this-week activity detail, records, per-round history,
+  strongest activities, cumulative distance/elevation (detailed entries only) ✅
+- `GET /api/pack-stats` — whole-pack comparison (Statistiky): all-time ranking,
+  per-round group totals + winners, per-member×round matrix ✅
 - `GET /api/activities` — active rate table for the log-activity screen ✅ (chunk 5)
 - `POST /api/log-entries/preview` — compute points for an entry, no write ✅ (chunk 6)
 - `POST /api/log-entries` — commit a log entry ✅ (chunk 6)
@@ -126,7 +134,7 @@ through `mountProtected`.
   endpoint returns the uniform `{ ok: true } | { ok: false, message }`
   (validation failures included, so the frontend toasts them without a throw);
   the whole admin router is mounted once behind `requireAdmin`.
-  - members: `GET /api/admin/members`, `POST /api/admin/members/invite`, `PATCH /api/admin/members/:id`
+  - members: `GET /api/admin/members`, `POST /api/admin/members/invite`, `PATCH /api/admin/members/:id`, `POST /api/admin/members/merge` (fold a historical member into a real account)
   - activities: `GET /api/admin/activities`, `POST /api/admin/activities`, `PATCH /api/admin/activities/:id`
   - rounds: `GET /api/admin/rounds`, `POST /api/admin/rounds`, `PATCH /api/admin/rounds/:id`
   - challenge rotation: `GET /api/admin/rotation`, `PUT /api/admin/rotation`

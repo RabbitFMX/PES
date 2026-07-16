@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { memberInviteSchema, memberPatchSchema } from '../../schemas/admin'
-import { editMember, getMembers, inviteMember } from '../../services/adminMembers'
+import { memberInviteSchema, memberMergeSchema, memberPatchSchema } from '../../schemas/admin'
+import { editMember, getMembers, inviteMember, mergeMembers } from '../../services/adminMembers'
 import { parseBody, sendResult } from './util'
 
 export const adminMembersRouter = Router()
@@ -20,6 +20,17 @@ adminMembersRouter.post('/admin/members/invite', async (req, res, next) => {
   if (!body) return
   try {
     sendResult(res, await inviteMember(body.email), 201)
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** POST /api/admin/members/merge — fold a historical member into a real account. */
+adminMembersRouter.post('/admin/members/merge', async (req, res, next) => {
+  const body = parseBody(memberMergeSchema, req.body, res)
+  if (!body) return
+  try {
+    sendResult(res, await mergeMembers(body.targetId, body.historicalId))
   } catch (err) {
     next(err)
   }

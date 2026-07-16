@@ -11,9 +11,20 @@ vi.mock('../db/members', () => ({ updateMemberProfile }))
 
 function member(over: Partial<MemberRow> = {}): MemberRow {
   return {
-    id: 'me', name: 'Me', email: 'me@pes.dev', gender: null, coefficient: 1, division: 'A',
-    role: 'member', status: 'active', joined_date: '2022-01-01', avatar_url: null,
-    language_pref: 'cs', theme_pref: 'light', injury_exempt_until: null, is_historical: false,
+    id: 'me',
+    name: 'Me',
+    email: 'me@pes.dev',
+    gender: null,
+    coefficient: 1,
+    division: 'A',
+    role: 'member',
+    status: 'active',
+    joined_date: '2022-01-01',
+    avatar_url: null,
+    language_pref: 'cs',
+    theme_pref: 'light',
+    injury_exempt_until: null,
+    is_historical: false,
     ...over,
   }
 }

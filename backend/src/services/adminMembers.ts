@@ -1,8 +1,11 @@
 import {
+  deleteMember,
   getMemberByEmail,
+  getMemberById,
   insertMember,
   inviteAuthUser,
   listAllMembers,
+  reassignMemberChildRecords,
   updateMember,
   type MemberUpdate,
 } from '../db/members'
@@ -46,6 +49,31 @@ export async function inviteMember(email: string): Promise<AdminResult> {
     injury_exempt_until: null,
     is_historical: false,
   })
+  return { ok: true }
+}
+
+/**
+ * POST /api/admin/members/merge — fold a historical (data-only, imported)
+ * member into a real account: reassign all their history to the target, then
+ * delete the historical placeholder. Only historical members can be merged
+ * away, so a real account is never destroyed.
+ */
+export async function mergeMembers(targetId: string, historicalId: string): Promise<AdminResult> {
+  if (targetId === historicalId) {
+    return { ok: false, message: 'Choose two different members.' }
+  }
+  const [target, historical] = await Promise.all([
+    getMemberById(targetId),
+    getMemberById(historicalId),
+  ])
+  if (!target) return { ok: false, message: 'Target account not found.' }
+  if (!historical) return { ok: false, message: 'Historical member not found.' }
+  if (!historical.is_historical) {
+    return { ok: false, message: 'Only a historical member can be merged into an account.' }
+  }
+
+  await reassignMemberChildRecords(historicalId, targetId)
+  await deleteMember(historicalId)
   return { ok: true }
 }
 

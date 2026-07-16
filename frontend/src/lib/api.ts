@@ -226,6 +226,11 @@ export function inviteMember(email: string): Promise<ApiResult> {
   return apiClient.post<ApiResult>('/admin/members/invite', { email })
 }
 
+/** Merge a historical (imported) member's history into a real account. */
+export function mergeMembers(targetId: string, historicalId: string): Promise<ApiResult> {
+  return apiClient.post<ApiResult>('/admin/members/merge', { targetId, historicalId })
+}
+
 export function getAdminActivities(): Promise<Activity[]> {
   return apiClient.get<Activity[]>('/admin/activities')
 }

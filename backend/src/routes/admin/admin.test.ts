@@ -9,9 +9,12 @@ import type { ActivityRow, MemberRow, RoundRow } from '../../db/types'
 // Mock the DB layer so the tests drive the endpoints without a live Supabase.
 const listAllMembers = vi.hoisted(() => vi.fn())
 const getMemberByEmail = vi.hoisted(() => vi.fn())
+const getMemberById = vi.hoisted(() => vi.fn())
 const inviteAuthUser = vi.hoisted(() => vi.fn())
 const insertMember = vi.hoisted(() => vi.fn())
 const updateMember = vi.hoisted(() => vi.fn())
+const reassignMemberChildRecords = vi.hoisted(() => vi.fn())
+const deleteMember = vi.hoisted(() => vi.fn())
 const listAllActivities = vi.hoisted(() => vi.fn())
 const insertActivity = vi.hoisted(() => vi.fn())
 const updateActivity = vi.hoisted(() => vi.fn())
@@ -24,9 +27,12 @@ const putRotation = vi.hoisted(() => vi.fn())
 vi.mock('../../db/members', () => ({
   listAllMembers,
   getMemberByEmail,
+  getMemberById,
   inviteAuthUser,
   insertMember,
   updateMember,
+  reassignMemberChildRecords,
+  deleteMember,
 }))
 vi.mock('../../db/activities', () => ({ listAllActivities, insertActivity, updateActivity }))
 vi.mock('../../db/rounds', () => ({ listRounds, insertRound, updateRound }))
@@ -171,6 +177,45 @@ describe('Admin members', () => {
     expect(res.status).toBe(200)
     expect(res.body.ok).toBe(false)
     expect(updateMember).not.toHaveBeenCalled()
+  })
+})
+
+describe('Admin member merge', () => {
+  it('folds a historical member into a real account, then deletes the placeholder', async () => {
+    getMemberById.mockImplementation(async (id: string) =>
+      id === 'real'
+        ? { ...member('real', 'member'), is_historical: false }
+        : id === 'hist'
+          ? { ...member('hist', 'member'), is_historical: true }
+          : null,
+    )
+    reassignMemberChildRecords.mockResolvedValue(undefined)
+    deleteMember.mockResolvedValue(undefined)
+
+    const res = await request(buildApp(admin))
+      .post('/api/admin/members/merge')
+      .set('Authorization', 'Bearer valid')
+      .send({ targetId: 'real', historicalId: 'hist' })
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ ok: true })
+    expect(reassignMemberChildRecords).toHaveBeenCalledWith('hist', 'real')
+    expect(deleteMember).toHaveBeenCalledWith('hist')
+  })
+
+  it('refuses to merge a non-historical source', async () => {
+    getMemberById.mockImplementation(async (id: string) => ({
+      ...member(id, 'member'),
+      is_historical: false,
+    }))
+    const res = await request(buildApp(admin))
+      .post('/api/admin/members/merge')
+      .set('Authorization', 'Bearer valid')
+      .send({ targetId: 'real', historicalId: 'other' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(false)
+    expect(deleteMember).not.toHaveBeenCalled()
   })
 })
 
