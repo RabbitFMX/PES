@@ -60,6 +60,27 @@ export async function inviteAuthUser(
   return { userId: data.user.id }
 }
 
+/**
+ * Create a Supabase Auth user WITH a password (email pre-confirmed) and return
+ * the new auth user id (which becomes `member.id`). Used by public self-signup
+ * (services/signup.ts) — distinct from `inviteAuthUser`, which sends an admin
+ * invite email and sets no password.
+ */
+export async function signUpAuthUser(
+  email: string,
+  password: string,
+  client: Supabase = supabase,
+): Promise<{ userId: string }> {
+  const { data, error } = await client.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  })
+  if (error) throw error
+  if (!data.user) throw new Error('signup did not return a user')
+  return { userId: data.user.id }
+}
+
 /** Insert a member row (the id is the Supabase auth.users id from the invite). */
 export async function insertMember(
   row: MemberRow,

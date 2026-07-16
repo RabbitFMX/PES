@@ -36,7 +36,14 @@
     "submit": "Sign in",
     "forgot": "Forgot password?",
     "error": "Sign-in failed. Check your details.",
-    "invited": "Pack members only — access is invite-only."
+    "invited": "Pack members only — access is invite-only.",
+    "name": "Name",
+    "inviteCode": "Invite code",
+    "inviteCodeHint": "Ask an admin for the pack's invite code.",
+    "signupSubmit": "Create account",
+    "signupError": "Couldn't create your account. Please try again.",
+    "toSignup": "New here? Create an account",
+    "toLogin": "Already have an account? Sign in"
   },
   "dashboard": {
     "weeklyProgress": "Weekly progress",

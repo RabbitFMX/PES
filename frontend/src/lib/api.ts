@@ -31,6 +31,21 @@ export function getMe(): Promise<CurrentUser> {
   return apiClient.get<CurrentUser>('/me')
 }
 
+/**
+ * Public self-signup (invite-code gated). Creates the Supabase Auth user + a
+ * member row server-side; the caller then signs in normally. Returns the
+ * uniform `ApiResult` so the login screen can show the server's message
+ * (bad code, duplicate email, …) without throwing.
+ */
+export function signup(input: {
+  name: string
+  email: string
+  password: string
+  inviteCode: string
+}): Promise<ApiResult> {
+  return apiClient.post<ApiResult>('/signup', input)
+}
+
 /* ---- Dashboard ---- */
 
 export function getDashboard(): Promise<DashboardData> {

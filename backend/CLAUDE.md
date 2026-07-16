@@ -69,6 +69,8 @@ gitignored `.env`):
   (the app's runtime DB access goes through `@supabase/supabase-js`)
 - `DATABASE_URL` — Postgres connection string, used **only** by the migrate/seed
   scripts (Supabase → Project Settings → Database; or any Postgres URL locally)
+- `SIGNUP_INVITE_CODE` — shared code that gates public self-signup
+  (`POST /api/signup`). Unset ⇒ self-signup is disabled (fails closed)
 - `ANTHROPIC_API_KEY` — present but unused until seminar 6
 
 ## API structure
@@ -106,6 +108,10 @@ through `mountProtected`.
 **Planned endpoints** (built across the later chunks; ticked = live):
 
 - `GET /api/health` — liveness ✅ (chunk 1)
+- `POST /api/signup` — **public** self-signup, gated by `SIGNUP_INVITE_CODE`;
+  creates the Supabase Auth user (password, email pre-confirmed) + a `member`
+  row (role `member`, division B). The only path that provisions a member
+  without an admin; `requireAuth` stays invite-only. ✅
 - `GET /api/me` — the current member's profile ✅ (chunk 4)
 - `GET /api/activities` — active rate table for the log-activity screen ✅ (chunk 5)
 - `POST /api/log-entries/preview` — compute points for an entry, no write ✅ (chunk 6)

@@ -36,7 +36,14 @@
     "submit": "Přihlásit se",
     "forgot": "Zapomenuté heslo?",
     "error": "Přihlášení se nezdařilo. Zkontroluj údaje.",
-    "invited": "Jen pro členy smečky — přístup na pozvánku."
+    "invited": "Jen pro členy smečky — přístup na pozvánku.",
+    "name": "Jméno",
+    "inviteCode": "Zvací kód",
+    "inviteCodeHint": "Zvací kód ti dá admin smečky.",
+    "signupSubmit": "Vytvořit účet",
+    "signupError": "Účet se nepodařilo vytvořit. Zkus to prosím znovu.",
+    "toSignup": "Nováček? Vytvoř si účet",
+    "toLogin": "Už máš účet? Přihlas se"
   },
   "dashboard": {
     "weeklyProgress": "Týdenní pokrok",
