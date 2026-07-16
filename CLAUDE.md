@@ -48,6 +48,88 @@ The backend implements the real endpoints; the frontend consumes them
 4. **Frontend** — from `frontend/`: `npm run dev` (serves `:5173`, calls the API).
 5. Log in as a seeded member (and an admin) and walk the screens.
 
+## Running in production (Docker)
+
+The whole stack ships as three services behind a Traefik reverse proxy, defined
+at the repo root. Config is **not** committed — a single gitignored `.env`
+(copied from `.env.example`) feeds every service.
+
+- **`backend/Dockerfile`** — multi-stage: a `node:24-slim` build stage runs
+  `npm ci` + `npm run build` (tsc → `dist/`), then a slim `node:24-slim`
+  production stage installs prod-only deps, copies `dist/`, drops to the `node`
+  user, and runs `node dist/server.js` on `PORT` (default 3001). A `HEALTHCHECK`
+  hits `/api/health`.
+- **`frontend/Dockerfile`** — multi-stage: a `node:24-slim` build stage runs
+  `npm run build` (Vite → static `dist/`), then an `nginx:alpine` stage serves
+  it. `VITE_*` values are compiled in at build time, so they arrive as **build
+  args** (from `.env`), not runtime env. SPA routing via `frontend/nginx.conf`
+  (history-API fallback to `index.html`).
+- **`docker-compose.yml`** (repo root) — three services on a shared bridge
+  network **`pes-net`** (pinned with `name: pes-net` so it is not project-
+  prefixed — the `traefik.docker.network` labels must match it), all with
+  `restart: always`:
+  - **`traefik`** (`traefik:v3.5`) — the only service that publishes host ports
+    (`80`, `443`). See the Traefik section below.
+  - **`backend`** — no published ports; runtime config via `env_file: .env`.
+  - **`frontend`** — no published ports; `VITE_*` passed as build args from the
+    same `.env`; `depends_on: backend`.
+- **`.env.example`** (repo root) — every variable both apps need (backend
+  runtime + frontend `VITE_*` build args), empty with per-line comments.
+- **`.dockerignore`** in each app keeps `node_modules`, build output, and
+  secrets (`.env`) out of the image context.
+
+### Traefik reverse proxy (HTTPS)
+
+Traefik terminates TLS at **`juras.aibr.cz`** and is the single public entry
+point; the app containers are reachable **only** through it on `pes-net`.
+
+- **Entrypoints:** `web` (`:80`) and `websecure` (`:443`). A global redirect
+  sends all `web` traffic to `websecure` (HTTP → HTTPS).
+- **Provider:** Docker, `exposedbydefault=false` — services opt in with
+  `traefik.enable=true` labels.
+- **Certificates:** Let's Encrypt via the ACME **HTTP-01** challenge (answered
+  on the `web` entrypoint before the redirect applies). Resolver name
+  `letsencrypt`, ACME email `juras@fzp.czu.cz`. The `acme.json` store lives in
+  the persisted `letsencrypt` named volume (`/letsencrypt/acme.json`), so certs
+  survive restarts/rebuilds.
+- **Docker socket** is mounted read-only (`/var/run/docker.sock:ro`) so Traefik
+  can watch labels.
+- **Host requirement (Docker 29):** Traefik's bundled Docker client negotiates
+  with API 1.24, but Docker 29's daemon rejects anything below its
+  `MinAPIVersion` (1.40). Without a fix, the docker provider loads **no** labels
+  and no cert is issued. The fix is host-side: a systemd drop-in
+  (`/etc/systemd/system/docker.service.d/api-compat.conf`) sets
+  `DOCKER_MIN_API_VERSION=1.24` on `dockerd`. This is a server-config
+  dependency, not something in this repo — a fresh host needs it before
+  `docker compose up` will route.
+
+**Routing rules** (host-based, both routers on `websecure`, each with
+`tls.certresolver=letsencrypt`):
+
+- `backend` router — `Host(`juras.aibr.cz`) && PathPrefix(`/api`)`, explicit
+  `priority=100`, forwards to the backend on `${PORT:-3001}`. The API already
+  mounts under `/api`, so there is **no** prefix stripping.
+- `frontend` router — `Host(`juras.aibr.cz`)` (default priority), forwards to
+  the nginx SPA on `:80`.
+
+The backend's higher priority guarantees `/api/*` beats the frontend's
+catch-all Host rule; everything else falls through to the SPA.
+
+Build & run (only once `.env` is filled in):
+
+```
+cp .env.example .env      # then fill in real values
+docker compose build
+docker compose up -d
+```
+
+Set `CORS_ORIGIN=https://juras.aibr.cz` and
+`VITE_API_BASE_URL=https://juras.aibr.cz/api` in `.env`. **Prereqs for HTTPS:**
+DNS for `juras.aibr.cz` must point at this host and ports 80 + 443 must be
+reachable from the internet (Let's Encrypt HTTP-01). Docker is enabled on boot
+(`systemctl enable docker`), so `restart: always` brings the whole stack back
+after a reboot.
+
 ## Tech stack
 
 - **Frontend:** React (v19, latest stable — assumption) + Vite + TypeScript +

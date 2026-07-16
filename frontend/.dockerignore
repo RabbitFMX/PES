@@ -1,0 +1,29 @@
+# Never copy installed deps or build output — the image builds them itself.
+node_modules
+dist
+dist-ssr
+
+# Secrets and local env — must never enter an image layer.
+.env
+.env.*
+!.env.example
+
+# VCS / editor / OS noise
+.git
+.gitignore
+.DS_Store
+.vscode
+.idea
+
+# Tooling / test / docs not needed to build the bundle
+coverage
+*.log
+CLAUDE.md
+README.md
+.prettierrc.json
+.prettierignore
+eslint.config.js
+**/*.test.ts
+**/*.test.tsx
+Dockerfile
+.dockerignore

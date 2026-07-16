@@ -1,0 +1,121 @@
+# PES production stack, fronted by Traefik (reverse proxy + automatic HTTPS).
+#
+# Traefik terminates TLS at juras.aibr.cz and routes by request path:
+#   https://juras.aibr.cz/       -> frontend (nginx-served React SPA)
+#   https://juras.aibr.cz/api    -> backend  (Express API, already mounts at /api)
+# The app services publish NO host ports — they are reachable only through
+# Traefik on the shared pes-net network.
+#
+# Usage:
+#   cp .env.example .env      # then fill in the real values
+#   docker compose build
+#   docker compose up -d
+#
+# Prereqs for HTTPS to succeed: DNS A/AAAA for juras.aibr.cz must point at this
+# host, and ports 80 + 443 must be reachable from the internet (Let's Encrypt
+# HTTP-01 challenge). Certs are issued on first start and persisted in the
+# `letsencrypt` volume.
+
+services:
+  # --- Reverse proxy: TLS termination, HTTP->HTTPS redirect, Let's Encrypt ---
+  traefik:
+    image: traefik:v3.5
+    restart: always
+    # NOTE: Traefik's bundled Docker client (all v3.x as of 3.5.6) negotiates
+    # with Docker API 1.24, which Docker 29's daemon rejects (its MinAPIVersion
+    # is 1.40). The fix lives on the HOST, not here: a systemd drop-in
+    # (/etc/systemd/system/docker.service.d/api-compat.conf) sets
+    # DOCKER_MIN_API_VERSION=1.24 so the daemon keeps accepting the old API.
+    # Without it, the docker provider below loads no labels and no cert issues.
+    command:
+      # Discover other services via Docker labels (opt-in only).
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      # Entrypoints: web = HTTP/80, websecure = HTTPS/443.
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # Global HTTP -> HTTPS redirect on the web entrypoint.
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      # Let's Encrypt via ACME HTTP-01 challenge (served on the web entrypoint,
+      # which Traefik answers before applying the redirect above).
+      - --certificatesresolvers.letsencrypt.acme.email=juras@fzp.czu.cz
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      # Read-only access to the Docker socket so Traefik can watch labels.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Persist issued certs (acme.json) across restarts/rebuilds.
+      - letsencrypt:/letsencrypt
+    networks:
+      - pes-net
+
+  backend:
+    build:
+      context: ./backend
+    image: pes-backend
+    restart: always
+    # All backend runtime config comes from the project .env (PORT, CORS_ORIGIN,
+    # Supabase keys, DATABASE_URL, ANTHROPIC_API_KEY). VITE_* lines are ignored.
+    env_file: .env
+    # No published ports — only Traefik reaches it, over pes-net.
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=pes-net
+      # /api goes to the backend. Host+PathPrefix is more specific than the
+      # frontend's Host-only rule; the explicit priority makes that guaranteed.
+      - traefik.http.routers.backend.rule=Host(`juras.aibr.cz`) && PathPrefix(`/api`)
+      - traefik.http.routers.backend.entrypoints=websecure
+      - traefik.http.routers.backend.tls=true
+      - traefik.http.routers.backend.tls.certresolver=letsencrypt
+      - traefik.http.routers.backend.priority=100
+      # The API already serves under /api, so no prefix stripping.
+      - traefik.http.services.backend.loadbalancer.server.port=${PORT:-3001}
+    networks:
+      - pes-net
+
+  frontend:
+    build:
+      context: ./frontend
+      # VITE_* values are compiled into the static bundle at BUILD time, so they
+      # are passed as build args (not runtime env). Values come from .env.
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    image: pes-frontend
+    restart: always
+    depends_on:
+      - backend
+    # No published ports — only Traefik reaches it, over pes-net.
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=pes-net
+      # Everything else (the SPA) goes to the frontend.
+      - traefik.http.routers.frontend.rule=Host(`juras.aibr.cz`)
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls=true
+      - traefik.http.routers.frontend.tls.certresolver=letsencrypt
+      # nginx listens on 80 inside the container.
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+    networks:
+      - pes-net
+
+networks:
+  pes-net:
+    # Pin the real network name so it is NOT prefixed with the compose project
+    # name (which would make it `pes_pes-net`). Traefik matches containers to a
+    # network by the exact name in the `traefik.docker.network=pes-net` labels,
+    # so the actual Docker network must be called `pes-net` for routing to be
+    # unambiguous.
+    name: pes-net
+    driver: bridge
+
+volumes:
+  # Named volume for Let's Encrypt state (acme.json). Traefik creates the file
+  # with correct 600 perms inside the volume, avoiding host-mount perm issues.
+  letsencrypt:
