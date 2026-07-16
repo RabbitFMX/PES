@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   Bar,
@@ -211,7 +212,12 @@ function PackBody({ data }: { data: PackStats }) {
                       <Avatar name={m.displayName} src={m.avatarUrl} size="sm" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-text">{m.displayName}</span>
+                          <Link
+                            to={`/members/${m.memberId}`}
+                            className="font-medium text-text hover:text-primary hover:underline"
+                          >
+                            {m.displayName}
+                          </Link>
                           <Badge>{m.division}</Badge>
                         </div>
                         <div className="text-xs text-primary">🐾 {pesTitle(m)}</div>

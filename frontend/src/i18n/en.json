@@ -218,5 +218,21 @@
     "dark": "Dark",
     "toggleTheme": "Toggle theme",
     "saved": "Profile saved."
+  },
+  "overview": {
+    "pts": "pts",
+    "historical": "History",
+    "roundsPlayed": "{{count}} rounds",
+    "thisWeek": "This week",
+    "noActivities": "No activity logged this week yet.",
+    "quickAdd": "Quick add",
+    "pointsPerRound": "Points by round",
+    "distance": "Distance",
+    "elevation": "Elevation",
+    "totalKm": "Total distance",
+    "totalElevation": "Total elevation",
+    "cumDistance": "Cumulative distance",
+    "cumElevation": "Cumulative elevation",
+    "noDetailYet": "Distance & elevation track from new detailed entries."
   }
 }

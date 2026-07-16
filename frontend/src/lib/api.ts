@@ -17,6 +17,8 @@ import type {
   LeaderboardData,
   LogPreview,
   Member,
+  MemberDirectoryEntry,
+  MemberOverview,
   PackStats,
   PastChallenge,
   QuickAddInput,
@@ -57,6 +59,16 @@ export function getDashboard(): Promise<DashboardData> {
 
 export function getPackStats(): Promise<PackStats> {
   return apiClient.get<PackStats>('/pack-stats')
+}
+
+/* ---- Personal overview + view-others ---- */
+
+export function getMemberOverview(memberId: string): Promise<MemberOverview> {
+  return apiClient.get<MemberOverview>(`/members/${memberId}/overview`)
+}
+
+export function getMembersDirectory(): Promise<MemberDirectoryEntry[]> {
+  return apiClient.get<MemberDirectoryEntry[]>('/members')
 }
 
 /* ---- Log activity ---- */

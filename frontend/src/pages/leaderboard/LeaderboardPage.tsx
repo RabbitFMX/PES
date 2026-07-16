@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
 import { getLeaderboard } from '../../lib/api'
@@ -79,7 +80,12 @@ function LeaderboardTable({ rows }: { rows: LeaderboardRow[] }) {
               <td className="px-3 py-3">
                 <div className="flex items-center gap-3">
                   <Avatar name={r.displayName} src={r.avatarUrl} size="sm" />
-                  <span className="font-medium text-text">{r.displayName}</span>
+                  <Link
+                    to={`/members/${r.memberId}`}
+                    className="font-medium text-text hover:text-primary hover:underline"
+                  >
+                    {r.displayName}
+                  </Link>
                   {r.isCurrentUser && <Badge variant="primary">{t('leaderboard.you')}</Badge>}
                 </div>
               </td>
@@ -102,7 +108,12 @@ function LeaderboardTable({ rows }: { rows: LeaderboardRow[] }) {
             <Avatar name={r.displayName} src={r.avatarUrl} size="sm" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="truncate font-medium text-text">{r.displayName}</span>
+                <Link
+                  to={`/members/${r.memberId}`}
+                  className="truncate font-medium text-text hover:text-primary"
+                >
+                  {r.displayName}
+                </Link>
                 {r.isCurrentUser && <Badge variant="primary">{t('leaderboard.you')}</Badge>}
               </div>
               <div className="text-sm text-muted">{formatPoints(r.roundTotal)}</div>

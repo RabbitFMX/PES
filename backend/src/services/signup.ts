@@ -39,6 +39,7 @@ export async function signUp(input: SignupInput): Promise<SignupResult> {
     language_pref: 'cs',
     theme_pref: 'light',
     injury_exempt_until: null,
+    is_historical: false,
   })
   return { ok: true }
 }

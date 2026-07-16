@@ -28,6 +28,23 @@ export const memberOverviewSchema = z.object({
     division: z.enum(['A', 'B']),
     isHistorical: z.boolean(),
   }),
+  /** Current open week snapshot. */
+  weekly: z.object({
+    weeklyPoints: z.number(),
+    weeklyGoal: z.number(),
+    streakWeeks: z.number(),
+  }),
+  /** Every entry logged in the current open week, with detail (distance/reps/elevation). */
+  currentWeekActivities: z.array(
+    z.object({
+      activityName: z.string().nullable(), // null = quick-add (no rate-table activity)
+      quantity: z.number(),
+      unit: z.string(),
+      elevationM: z.number(),
+      points: z.number(),
+      date: z.string(),
+    }),
+  ),
   records: z.object({
     lifetimePoints: z.number(),
     roundsPlayed: z.number(),

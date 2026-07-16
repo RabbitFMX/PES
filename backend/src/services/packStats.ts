@@ -37,7 +37,10 @@ export async function getPackStats(): Promise<PackStats> {
 
   // Per-member strongest activities (detailed entries only; quick-add excluded).
   const detailed = await listDetailedActivityPoints()
-  const actByMember = new Map<string, Map<string, { nameCs: string; nameEn: string; points: number }>>()
+  const actByMember = new Map<
+    string,
+    Map<string, { nameCs: string; nameEn: string; points: number }>
+  >()
   for (const d of detailed) {
     const byAct = actByMember.get(d.member_id) ?? new Map()
     const cur = byAct.get(d.activity_id) ?? { nameCs: d.name_cs, nameEn: d.name_en, points: 0 }
@@ -47,7 +50,12 @@ export async function getPackStats(): Promise<PackStats> {
   }
   const topActivitiesOf = (memberId: string) =>
     [...(actByMember.get(memberId)?.entries() ?? [])]
-      .map(([activityId, v]) => ({ activityId, nameCs: v.nameCs, nameEn: v.nameEn, points: v.points }))
+      .map(([activityId, v]) => ({
+        activityId,
+        nameCs: v.nameCs,
+        nameEn: v.nameEn,
+        points: v.points,
+      }))
       .sort((a, b) => b.points - a.points || a.activityId.localeCompare(b.activityId))
       .slice(0, 3)
 
@@ -98,7 +106,9 @@ export async function getPackStats(): Promise<PackStats> {
         topActivities: topActivitiesOf(mid),
       }
     })
-    .sort((a, b) => b.lifetimePoints - a.lifetimePoints || a.displayName.localeCompare(b.displayName))
+    .sort(
+      (a, b) => b.lifetimePoints - a.lifetimePoints || a.displayName.localeCompare(b.displayName),
+    )
 
   const roundTotals = allTime.map((m) => ({
     memberId: m.memberId,

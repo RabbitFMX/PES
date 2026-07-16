@@ -139,10 +139,14 @@ export async function listMemberEntriesDetailed(
  * excluded by the inner join, so these stats fill only from real logged
  * activities going forward. Paginated (PostgREST caps at 1000).
  */
-export async function listDetailedActivityPoints(
-  client: Supabase = supabase,
-): Promise<
-  { member_id: string; activity_id: string; name_cs: string; name_en: string; final_points: number }[]
+export async function listDetailedActivityPoints(client: Supabase = supabase): Promise<
+  {
+    member_id: string
+    activity_id: string
+    name_cs: string
+    name_en: string
+    final_points: number
+  }[]
 > {
   const PAGE = 1000
   type Row = {

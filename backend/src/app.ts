@@ -8,6 +8,7 @@ import { healthRouter } from './routes/health'
 import { leaderboardRouter } from './routes/leaderboard'
 import { logEntriesRouter } from './routes/logEntries'
 import { meRouter } from './routes/me'
+import { membersRouter } from './routes/members'
 import { packStatsRouter } from './routes/packStats'
 import { signupRouter } from './routes/signup'
 import { statsRouter } from './routes/stats'
@@ -36,6 +37,7 @@ export function createApp() {
   mountProtected(app, '/api', leaderboardRouter)
   mountProtected(app, '/api', statsRouter)
   mountProtected(app, '/api', packStatsRouter)
+  mountProtected(app, '/api', membersRouter)
   mountProtected(app, '/api', challengesRouter)
 
   // Admin routes: same auth, plus the admin-role guard.

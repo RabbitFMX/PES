@@ -19,9 +19,19 @@ vi.mock('../db/logEntries', () => ({ listRoundEntries, listDetailedActivityPoint
 
 function member(id: string, division: 'A' | 'B'): MemberRow {
   return {
-    id, name: id, email: `${id}@pes.dev`, gender: null, coefficient: 1,
-    division, role: 'member', status: 'active', joined_date: '2022-01-01',
-    avatar_url: null, language_pref: 'cs', theme_pref: 'light', injury_exempt_until: null,
+    id,
+    name: id,
+    email: `${id}@pes.dev`,
+    gender: null,
+    coefficient: 1,
+    division,
+    role: 'member',
+    status: 'active',
+    joined_date: '2022-01-01',
+    avatar_url: null,
+    language_pref: 'cs',
+    theme_pref: 'light',
+    injury_exempt_until: null,
   }
 }
 
@@ -41,8 +51,20 @@ function buildApp() {
 beforeEach(() => {
   vi.clearAllMocks()
   listRounds.mockResolvedValue([
-    { id: 'r-new', name: 'R-new', start_date: '2026-07-06', end_date: '2026-12-27', status: 'open' },
-    { id: 'r-old', name: 'R-old', start_date: '2022-01-03', end_date: '2022-06-27', status: 'closed' },
+    {
+      id: 'r-new',
+      name: 'R-new',
+      start_date: '2026-07-06',
+      end_date: '2026-12-27',
+      status: 'open',
+    },
+    {
+      id: 'r-old',
+      name: 'R-old',
+      start_date: '2022-01-03',
+      end_date: '2022-06-27',
+      status: 'closed',
+    },
   ])
   listWeeks.mockResolvedValue([
     { id: 'w1', round_id: 'r-old', start_date: '2022-01-03', week_number: 1 },
@@ -56,8 +78,20 @@ beforeEach(() => {
     { member_id: 'bob', week_id: 'w2', final_points: 40 },
   ])
   listDetailedActivityPoints.mockResolvedValue([
-    { member_id: 'alice', activity_id: 'run', name_cs: 'běh', name_en: 'Running', final_points: 20 },
-    { member_id: 'alice', activity_id: 'swim', name_cs: 'plavání', name_en: 'Swim', final_points: 10 },
+    {
+      member_id: 'alice',
+      activity_id: 'run',
+      name_cs: 'běh',
+      name_en: 'Running',
+      final_points: 20,
+    },
+    {
+      member_id: 'alice',
+      activity_id: 'swim',
+      name_cs: 'plavání',
+      name_en: 'Swim',
+      final_points: 10,
+    },
   ])
 })
 
@@ -67,12 +101,19 @@ describe('GET /api/pack-stats', () => {
   })
 
   it('ranks members by lifetime points and finds per-round winners', async () => {
-    const res = await request(buildApp()).get('/api/pack-stats').set('Authorization', 'Bearer valid')
+    const res = await request(buildApp())
+      .get('/api/pack-stats')
+      .set('Authorization', 'Bearer valid')
     expect(res.status).toBe(200)
 
     expect(res.body.totals).toMatchObject({ rounds: 2, members: 2, currentRoundName: 'R-new' })
     // all-time: alice 130 (rank 1), bob 90
-    expect(res.body.allTime[0]).toMatchObject({ memberId: 'alice', lifetimePoints: 130, roundsPlayed: 2, wins: 1 })
+    expect(res.body.allTime[0]).toMatchObject({
+      memberId: 'alice',
+      lifetimePoints: 130,
+      roundsPlayed: 2,
+      wins: 1,
+    })
     expect(res.body.allTime[1]).toMatchObject({ memberId: 'bob', lifetimePoints: 90, wins: 1 })
 
     // rounds chronological: R-old first, winner alice; R-new second, winner bob
@@ -86,7 +127,10 @@ describe('GET /api/pack-stats', () => {
 
     // strongest activities (detailed entries): run (20) ahead of swim (10)
     const aliceAllTime = res.body.allTime.find((m: { memberId: string }) => m.memberId === 'alice')
-    expect(aliceAllTime.topActivities.map((a: { activityId: string }) => a.activityId)).toEqual(['run', 'swim'])
+    expect(aliceAllTime.topActivities.map((a: { activityId: string }) => a.activityId)).toEqual([
+      'run',
+      'swim',
+    ])
     const bobAllTime = res.body.allTime.find((m: { memberId: string }) => m.memberId === 'bob')
     expect(bobAllTime.topActivities).toEqual([])
   })

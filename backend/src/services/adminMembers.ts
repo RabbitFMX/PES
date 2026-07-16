@@ -44,6 +44,7 @@ export async function inviteMember(email: string): Promise<AdminResult> {
     language_pref: 'cs',
     theme_pref: 'light',
     injury_exempt_until: null,
+    is_historical: false,
   })
   return { ok: true }
 }

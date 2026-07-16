@@ -218,5 +218,21 @@
     "dark": "Tmavý",
     "toggleTheme": "Přepnout motiv",
     "saved": "Profil uložen."
+  },
+  "overview": {
+    "pts": "b",
+    "historical": "Historie",
+    "roundsPlayed": "{{count}} kol",
+    "thisWeek": "Tento týden",
+    "noActivities": "Tento týden zatím žádná aktivita.",
+    "quickAdd": "Rychlý zápis",
+    "pointsPerRound": "Body podle kol",
+    "distance": "Vzdálenost",
+    "elevation": "Převýšení",
+    "totalKm": "Kilometry celkem",
+    "totalElevation": "Převýšení celkem",
+    "cumDistance": "Kumulativní vzdálenost",
+    "cumElevation": "Kumulativní převýšení",
+    "noDetailYet": "Vzdálenost a převýšení se počítají z nových podrobných zápisů."
   }
 }

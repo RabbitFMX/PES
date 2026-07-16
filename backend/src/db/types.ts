@@ -35,7 +35,9 @@ export interface MemberRow {
   language_pref: 'cs' | 'en'
   theme_pref: 'light' | 'dark'
   injury_exempt_until: string | null
-  is_historical: boolean
+  /** True for spreadsheet-imported members with no login yet. Column has a DB
+   *  default (false), so it is optional in constructed rows. */
+  is_historical?: boolean
 }
 
 export interface RoundRow {

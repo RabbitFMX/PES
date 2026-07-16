@@ -36,6 +36,61 @@ export interface DashboardData {
   currentChallenge: { id: string; title: string; hasSubmitted: boolean } | null
 }
 
+/* ---- Personal overview (Přehled tab + read-only member pages) ---- */
+
+export interface OverviewActivityRef {
+  activityId: string
+  nameCs: string
+  nameEn: string
+}
+
+export interface CurrentWeekActivity {
+  activityName: string | null
+  quantity: number
+  unit: string
+  elevationM: number
+  points: number
+  date: string
+}
+
+export interface MemberOverview {
+  member: {
+    id: string
+    displayName: string
+    avatarUrl: string | null
+    division: Division
+    isHistorical: boolean
+  }
+  weekly: { weeklyPoints: number; weeklyGoal: number; streakWeeks: number }
+  currentWeekActivities: CurrentWeekActivity[]
+  records: {
+    lifetimePoints: number
+    roundsPlayed: number
+    bestWeek: number
+    longestStreakWeeks: number
+    weeksAtGoal: number
+    favouriteActivity: string
+    totalKm: number
+    totalElevation: number
+  }
+  topActivities: (OverviewActivityRef & { points: number })[]
+  roundHistory: { roundId: string; name: string; total: number }[]
+  pointsByDayOfWeek: { day: string; points: number }[]
+  distanceByActivity: (OverviewActivityRef & { km: number })[]
+  elevationByActivity: (OverviewActivityRef & { m: number })[]
+  cumulative: { weekStart: string; km: number; elevation: number }[]
+}
+
+export interface MemberDirectoryEntry {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+  division: Division
+  status: MemberStatus
+  isHistorical: boolean
+  lifetimePoints: number
+}
+
 /* ---- Whole-pack comparison stats (Statistiky tab) ---- */
 
 export interface PackTopActivity {

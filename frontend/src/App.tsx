@@ -6,16 +6,21 @@ import { RequireAdmin } from './components/RequireAdmin'
 import { AppShell } from './components/layout/AppShell'
 import { Skeleton } from './components/ui/Skeleton'
 import { LoginPage } from './pages/login/LoginPage'
-import { DashboardPage } from './pages/dashboard/DashboardPage'
 import { LeaderboardPage } from './pages/leaderboard/LeaderboardPage'
 import { ChallengesPage } from './pages/challenges/ChallengesPage'
 import { AdminPage } from './pages/admin/AdminPage'
 import { ProfilePage } from './pages/profile/ProfilePage'
 
-// Code-split the Stats page — it pulls in Recharts, which we don't want in the
-// initial bundle.
+// Code-split the chart-heavy pages — they pull in Recharts, which we keep out of
+// the initial bundle.
+const DashboardPage = lazy(() =>
+  import('./pages/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+)
 const StatsPage = lazy(() =>
   import('./pages/stats/StatsPage').then((m) => ({ default: m.StatsPage })),
+)
+const MemberPage = lazy(() =>
+  import('./pages/members/MemberPage').then((m) => ({ default: m.MemberPage })),
 )
 
 function App() {
@@ -34,9 +39,24 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route
+            path="/"
+            element={
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <DashboardPage />
+              </Suspense>
+            }
+          />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/challenges" element={<ChallengesPage />} />
+          <Route
+            path="/members/:id"
+            element={
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <MemberPage />
+              </Suspense>
+            }
+          />
           <Route
             path="/stats"
             element={

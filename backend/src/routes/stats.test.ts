@@ -97,6 +97,7 @@ function entry(overrides: Partial<MemberStatEntry>): MemberStatEntry {
     activityDate: '2026-01-05',
     quantity: 8,
     unit: 'km',
+    elevationM: 0,
     finalPoints: 30,
     weekId: 'week-1',
     weekStartDate: '2026-01-05',
