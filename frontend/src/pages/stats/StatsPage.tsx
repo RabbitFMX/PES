@@ -19,6 +19,8 @@ import { Card } from '../../components/ui/Card'
 import { Avatar } from '../../components/ui/Avatar'
 import { Badge } from '../../components/ui/Badge'
 import { Input } from '../../components/ui/Input'
+import { DogAvatar } from '../../components/DogAvatar'
+import { dogFromSeed, isDogAvatar, parseDog } from '../../lib/dogAvatar'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorState } from '../../components/ui/ErrorState'
@@ -113,8 +115,7 @@ export function StatsPage() {
 function PackBody({ data }: { data: PackStats }) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language.startsWith('en') ? 'en' : 'cs'
-  const top = data.allTime.slice(0, 12)
-  const barData = [...top].reverse().map((m) => ({ name: m.displayName, points: m.lifetimePoints }))
+  const podium = data.allTime.slice(0, 10)
   const roundData = data.rounds.map((r) => ({ round: shortRound(r.name), points: r.groupTotal }))
 
   const pesTitle = (m: PackAllTimeRow) =>
@@ -188,21 +189,7 @@ function PackBody({ data }: { data: PackStats }) {
       {/* All-time ranking: chart + table with signature titles */}
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-text">{t('stats.allTime')}</h2>
-        <ResponsiveContainer width="100%" height={Math.max(220, barData.length * 26)}>
-          <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 16 }}>
-            <CartesianGrid horizontal={false} stroke="var(--chart-grid)" />
-            <XAxis type="number" stroke="var(--chart-axis)" fontSize={12} />
-            <YAxis
-              type="category"
-              dataKey="name"
-              width={92}
-              stroke="var(--chart-axis)"
-              fontSize={12}
-            />
-            <RTooltip {...tooltip} cursor={{ fill: 'var(--color-border)', opacity: 0.3 }} />
-            <Bar dataKey="points" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <DogColumns rows={podium} />
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
@@ -395,6 +382,42 @@ function PackBody({ data }: { data: PackStats }) {
           })}
         </ul>
       </Card>
+    </div>
+  )
+}
+
+/** All-time top-10 as a column chart: each column is a dog wearing a points collar. */
+function DogColumns({ rows }: { rows: PackAllTimeRow[] }) {
+  const max = Math.max(...rows.map((r) => r.lifetimePoints), 1)
+  const MAXBAR = 150
+  return (
+    <div className="overflow-x-auto pb-1">
+      <div className="flex items-end gap-2" style={{ minHeight: MAXBAR + 96 }}>
+        {rows.map((m) => {
+          const cfg = isDogAvatar(m.avatarUrl) ? parseDog(m.avatarUrl) : dogFromSeed(m.memberId)
+          const barPx = Math.max(6, Math.round((m.lifetimePoints / max) * MAXBAR))
+          return (
+            <div key={m.memberId} className="flex w-16 shrink-0 flex-col items-center">
+              <div
+                className="flex flex-col items-center justify-end"
+                style={{ height: MAXBAR + 64 }}
+              >
+                <DogAvatar config={cfg} title={m.displayName} className="size-12" />
+                <div className="z-10 -mt-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold tabular-nums text-on-accent shadow-[var(--shadow-card)] ring-1 ring-border">
+                  {Math.round(m.lifetimePoints).toLocaleString('cs-CZ')}
+                </div>
+                <div
+                  className="mt-1 w-5 rounded-t-[var(--radius-sm)] bg-primary"
+                  style={{ height: barPx }}
+                />
+              </div>
+              <div className="mt-1 w-full truncate text-center text-xs text-muted">
+                {m.displayName}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

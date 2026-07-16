@@ -1,4 +1,6 @@
 import { cn } from '../../lib/cn'
+import { DogAvatar } from '../DogAvatar'
+import { isDogAvatar, parseDog } from '../../lib/dogAvatar'
 
 interface AvatarProps {
   name: string
@@ -22,6 +24,19 @@ function initials(name: string): string {
 }
 
 export function Avatar({ name, src, size = 'md', className }: AvatarProps) {
+  if (isDogAvatar(src)) {
+    return (
+      <span
+        className={cn(
+          'inline-block overflow-hidden rounded-full bg-surface',
+          sizes[size],
+          className,
+        )}
+      >
+        <DogAvatar config={parseDog(src)} title={name} className="h-full w-full" />
+      </span>
+    )
+  }
   if (src) {
     return (
       <img
