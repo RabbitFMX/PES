@@ -86,7 +86,11 @@
     "invalidValue": "Zadej platnou hodnotu (větší než 0).",
     "duplicateWarn": "Tohle už jsi dnes zapsal — přidat znovu?",
     "confirmSave": "Uložit",
-    "saved": "Zapsáno. Dobrá práce!"
+    "saved": "Zapsáno. Dobrá práce!",
+    "scoring": {
+      "pts": "b",
+      "howItScores": "Jak se boduje"
+    }
   },
   "leaderboard": {
     "title": "Žebříček",

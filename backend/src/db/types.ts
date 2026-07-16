@@ -35,6 +35,7 @@ export interface MemberRow {
   language_pref: 'cs' | 'en'
   theme_pref: 'light' | 'dark'
   injury_exempt_until: string | null
+  is_historical: boolean
 }
 
 export interface RoundRow {

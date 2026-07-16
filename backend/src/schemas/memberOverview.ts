@@ -1,0 +1,54 @@
+import { z } from 'zod'
+
+/** A row in the members directory (view-others entry point). */
+export const memberDirectoryEntrySchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  avatarUrl: z.string().nullable(),
+  division: z.enum(['A', 'B']),
+  status: z.enum(['active', 'left']),
+  isHistorical: z.boolean(),
+  lifetimePoints: z.number(),
+})
+export type MemberDirectoryEntry = z.infer<typeof memberDirectoryEntrySchema>
+
+const activityPoints = z.object({
+  activityId: z.string(),
+  nameCs: z.string(),
+  nameEn: z.string(),
+  points: z.number(),
+})
+
+/** A member's personal overview (the Přehled tab; also shown to other members). */
+export const memberOverviewSchema = z.object({
+  member: z.object({
+    id: z.string(),
+    displayName: z.string(),
+    avatarUrl: z.string().nullable(),
+    division: z.enum(['A', 'B']),
+    isHistorical: z.boolean(),
+  }),
+  records: z.object({
+    lifetimePoints: z.number(),
+    roundsPlayed: z.number(),
+    bestWeek: z.number(),
+    longestStreakWeeks: z.number(),
+    weeksAtGoal: z.number(),
+    favouriteActivity: z.string(),
+    totalKm: z.number(),
+    totalElevation: z.number(),
+  }),
+  topActivities: z.array(activityPoints),
+  roundHistory: z.array(z.object({ roundId: z.string(), name: z.string(), total: z.number() })),
+  pointsByDayOfWeek: z.array(z.object({ day: z.string(), points: z.number() })),
+  distanceByActivity: z.array(
+    z.object({ activityId: z.string(), nameCs: z.string(), nameEn: z.string(), km: z.number() }),
+  ),
+  elevationByActivity: z.array(
+    z.object({ activityId: z.string(), nameCs: z.string(), nameEn: z.string(), m: z.number() }),
+  ),
+  /** Cumulative km & elevation after each active week (detailed entries only). */
+  cumulative: z.array(z.object({ weekStart: z.string(), km: z.number(), elevation: z.number() })),
+})
+
+export type MemberOverview = z.infer<typeof memberOverviewSchema>

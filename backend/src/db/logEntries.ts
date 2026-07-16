@@ -78,6 +78,7 @@ export interface MemberStatEntry {
   activityDate: string
   quantity: number
   unit: string
+  elevationM: number
   finalPoints: number
   weekId: string
   weekStartDate: string
@@ -96,7 +97,7 @@ export async function listMemberEntriesDetailed(
   const { data, error } = await client
     .from('log_entry')
     .select(
-      'activity_date, quantity, unit, final_points, week_id, activity_id, ' +
+      'activity_date, quantity, unit, elevation_m, final_points, week_id, activity_id, ' +
         'week!inner(start_date, week_number, round_id), activity(name_cs, name_en)',
     )
     .eq('member_id', memberId)
@@ -107,6 +108,7 @@ export async function listMemberEntriesDetailed(
     activity_date: string
     quantity: number
     unit: string
+    elevation_m: number | null
     final_points: number
     week_id: string
     activity_id: string | null
@@ -118,6 +120,7 @@ export async function listMemberEntriesDetailed(
     activityDate: r.activity_date,
     quantity: Number(r.quantity),
     unit: r.unit,
+    elevationM: Number(r.elevation_m ?? 0),
     finalPoints: Number(r.final_points),
     weekId: r.week_id,
     weekStartDate: r.week.start_date,

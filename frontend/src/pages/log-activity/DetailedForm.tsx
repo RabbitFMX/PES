@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Toggle } from '../../components/ui/Toggle'
 import { Skeleton } from '../../components/ui/Skeleton'
+import { ActivityScoring } from '../../components/ActivityScoring'
 import { ActivityPicker } from './ActivityPicker'
 
 interface Props {
@@ -73,6 +74,8 @@ export function DetailedForm({ onPreviews }: Props) {
 
       {activity && (
         <>
+          <ActivityScoring activity={activity} />
+
           {activity.isTiered && activity.tierOptions ? (
             <Select
               label={t('logActivity.presetValue')}

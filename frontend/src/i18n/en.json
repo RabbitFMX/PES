@@ -86,7 +86,11 @@
     "invalidValue": "Enter a valid value (greater than 0).",
     "duplicateWarn": "You already logged this today — add again?",
     "confirmSave": "Save",
-    "saved": "Logged. Nice work!"
+    "saved": "Logged. Nice work!",
+    "scoring": {
+      "pts": "pts",
+      "howItScores": "How it scores"
+    }
   },
   "leaderboard": {
     "title": "Leaderboard",

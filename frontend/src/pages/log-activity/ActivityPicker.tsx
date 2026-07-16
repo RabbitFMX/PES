@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Activity } from '../../lib/types'
 import { cn } from '../../lib/cn'
 import { Input } from '../../components/ui/Input'
+import { shortRate } from '../../lib/activityScoring'
 
 interface ActivityPickerProps {
   activities: Activity[]
@@ -48,12 +49,17 @@ export function ActivityPicker({ activities, value, onChange, lang }: ActivityPi
               aria-checked={selected}
               onClick={() => onChange(a.id)}
               className={cn(
-                'flex w-full items-center justify-between px-3 py-2 text-left text-sm',
+                'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm',
                 selected ? 'bg-primary/10 text-primary' : 'text-text hover:bg-secondary/5',
               )}
             >
-              <span className="font-medium">{primary}</span>
-              <span className="text-xs text-muted">{secondary}</span>
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate font-medium">{primary}</span>
+                <span className="text-xs text-muted tabular-nums">
+                  {shortRate(a, t('logActivity.scoring.pts'))}
+                </span>
+              </span>
+              <span className="shrink-0 text-xs text-muted">{secondary}</span>
             </button>
           )
         })}
