@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { ActivityIcon, activityIconKey } from './ActivityIcon'
+import { ActivityIcon } from './ActivityIcon'
+import { activityIconKey } from '../lib/activityIcon'
 
 describe('activityIconKey', () => {
   it('maps known activities, sharing a glyph for near-variants', () => {

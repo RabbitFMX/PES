@@ -1,79 +1,12 @@
 import type { ReactNode } from 'react'
 import { cn } from '../lib/cn'
+import { activityIconKey, type ActivityIconKey } from '../lib/activityIcon'
 
 /**
  * Activity icons — one cohesive line-icon set (24×24, `currentColor` stroke,
- * matching the nav icons). Every rate-table activity id maps to an icon key;
- * near-identical variants (bike types, bodyweight moves) intentionally share a
- * glyph. Use <ActivityIcon activityId="run" /> anywhere an activity is shown.
+ * matching the nav icons). The id→icon mapping lives in lib/activityIcon.
+ * Use <ActivityIcon activityId="run" /> anywhere an activity is shown.
  */
-
-export type ActivityIconKey =
-  | 'run'
-  | 'hike'
-  | 'swim'
-  | 'paddle'
-  | 'kayak'
-  | 'skate'
-  | 'bike'
-  | 'stroller'
-  | 'ski'
-  | 'timer'
-  | 'plank'
-  | 'strength'
-  | 'burpee'
-  | 'bar'
-  | 'yoga'
-  | 'jumprope'
-  | 'ball'
-  | 'route'
-  | 'flag'
-  | 'trophy'
-  | 'generic'
-
-/** Rate-table activity id → icon key. Unknown ids fall back to 'generic'. */
-const ICON_BY_ACTIVITY: Record<string, ActivityIconKey> = {
-  run: 'run',
-  hike: 'hike',
-  swim: 'swim',
-  paddleboard: 'paddle',
-  kayak: 'kayak',
-  skates: 'skate',
-  'bike-road': 'bike',
-  'bike-gravel': 'bike',
-  'bike-mtb': 'bike',
-  'bike-stroller': 'stroller',
-  xcski: 'ski',
-  skitour: 'ski',
-  downhill: 'ski',
-  tabata: 'timer',
-  plank: 'plank',
-  'plank-sally': 'plank',
-  pushups: 'strength',
-  squats: 'strength',
-  situps: 'strength',
-  'mountain-climber': 'strength',
-  lunges: 'strength',
-  'hip-raises': 'strength',
-  vups: 'strength',
-  exercise: 'strength',
-  burpees: 'burpee',
-  'burpees-pushup': 'burpee',
-  pullups: 'bar',
-  dips: 'bar',
-  'hanging-leg-raises': 'bar',
-  'sun-salutation': 'yoga',
-  jumprope: 'jumprope',
-  sports: 'ball',
-  strava: 'route',
-  race: 'flag',
-  ondra: 'trophy',
-}
-
-export function activityIconKey(activityId: string | null | undefined): ActivityIconKey {
-  if (!activityId) return 'generic'
-  return ICON_BY_ACTIVITY[activityId] ?? 'generic'
-}
 
 /* Icon bodies — stroke-only, drawn on a 24×24 grid. */
 const GLYPHS: Record<ActivityIconKey, ReactNode> = {

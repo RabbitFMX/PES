@@ -90,6 +90,14 @@ src/
   (`recordConsent` in `lib/api.ts`) for the server audit log. To wire a real
   analytics/marketing vendor, fill in `lib/analytics.ts` / `lib/marketing.ts` —
   the consent gate already wraps them.
+- **Dog avatars:** `lib/dogAvatar.ts` (data + `dog:<breed>:<coat>:<tail>:<collar>`
+  token, legacy-token compatible) + `components/DogAvatar.tsx` (parametric
+  full-body side-view SVG). ~24 breeds (ear/snout/build presets), ~15 coats incl.
+  patterns (spots/patches/saddle/mask/merle), 5 tails and 4 collars. Built in
+  Profile; rendered via the `Avatar` primitive for any `dog:` token.
+- **Activity icons:** `components/ActivityIcon.tsx` + mapping in
+  `lib/activityIcon.ts` — one line-icon set for all 35 activities, used in the
+  log picker, stats, overview and pie legend.
 - **Test-data toggle:** Profile has a "test data" switch (`lib/testData.ts`,
   persisted in localStorage). When on, `apiClient` adds the `X-PES-Test-Data`
   header and the backend serves generated per-activity detail (real weekly
