@@ -27,7 +27,13 @@
     "admin": "Admin",
     "settings": "Profile & settings",
     "logout": "Log out",
-    "profileMenu": "Profile menu"
+    "profileMenu": "Profile menu",
+    "rules": "Rules"
+  },
+  "rules": {
+    "title": "Rules",
+    "subtitle": "How the PES competition works — scoring, penalties and rewards.",
+    "source": "Transcribed from the group's PES spreadsheet (the “pravidla” sheet)."
   },
   "login": {
     "title": "Sign in",
@@ -261,6 +267,13 @@
     "totalElevation": "Total elevation",
     "cumDistance": "Cumulative distance",
     "cumElevation": "Cumulative elevation",
-    "noDetailYet": "Distance & elevation track from new detailed entries."
+    "noDetailYet": "Distance & elevation track from new detailed entries.",
+    "avgWeekly": "Avg / week",
+    "weeksBelow": "Weeks under 100",
+    "bestWeekTitle": "Best week",
+    "weekN": "Week {{n}}",
+    "pointsByActivity": "Points by activity",
+    "topActivities": "Favourite activities",
+    "otherActivities": "Other"
   }
 }

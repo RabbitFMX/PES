@@ -59,6 +59,14 @@ export function ProfileMenu() {
           >
             {t('nav.settings')}
           </Link>
+          <Link
+            to="/rules"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2 text-sm text-text hover:bg-secondary/10 lg:hidden"
+          >
+            {t('nav.rules')}
+          </Link>
           {user.role === 'admin' && (
             <Link
               to="/admin"

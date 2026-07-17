@@ -27,7 +27,13 @@
     "admin": "Administrace",
     "settings": "Profil a nastavení",
     "logout": "Odhlásit se",
-    "profileMenu": "Menu profilu"
+    "profileMenu": "Menu profilu",
+    "rules": "Pravidla"
+  },
+  "rules": {
+    "title": "Pravidla",
+    "subtitle": "Jak funguje soutěž PES — hodnocení, tresty a odměny.",
+    "source": "Přepsáno ze skupinové tabulky PES (list „pravidla“)."
   },
   "login": {
     "title": "Přihlášení",
@@ -261,6 +267,13 @@
     "totalElevation": "Převýšení celkem",
     "cumDistance": "Kumulativní vzdálenost",
     "cumElevation": "Kumulativní převýšení",
-    "noDetailYet": "Vzdálenost a převýšení se počítají z nových podrobných zápisů."
+    "noDetailYet": "Vzdálenost a převýšení se počítají z nových podrobných zápisů.",
+    "avgWeekly": "Průměr / týden",
+    "weeksBelow": "Týdny pod 100",
+    "bestWeekTitle": "Nejlepší týden",
+    "weekN": "{{n}}. týden",
+    "pointsByActivity": "Body podle aktivity",
+    "topActivities": "Nejoblíbenější aktivity",
+    "otherActivities": "Ostatní"
   }
 }

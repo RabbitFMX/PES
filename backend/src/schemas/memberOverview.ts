@@ -51,10 +51,29 @@ export const memberOverviewSchema = z.object({
     bestWeek: z.number(),
     longestStreakWeeks: z.number(),
     weeksAtGoal: z.number(),
+    /** Weeks the member logged something but stayed under the 100 goal. */
+    weeksBelowGoal: z.number(),
+    /** Weeks with any points logged (denominator for the average). */
+    weeksLogged: z.number(),
+    /** Mean points across logged weeks. */
+    avgWeeklyPoints: z.number(),
     favouriteActivity: z.string(),
     totalKm: z.number(),
     totalElevation: z.number(),
   }),
+  /** The single best week: which round/week, its points, and its activity split. */
+  bestWeekDetail: z
+    .object({
+      roundName: z.string(),
+      weekNumber: z.number(),
+      weekStart: z.string(),
+      points: z.number(),
+      activities: z.array(z.object({ activityName: z.string().nullable(), points: z.number() })),
+    })
+    .nullable(),
+  /** All lifetime points split by activity (incl. a quick-add bucket) — for the pie. */
+  pointsByActivity: z.array(activityPoints),
+  /** Top activities by points (up to 10). */
   topActivities: z.array(activityPoints),
   roundHistory: z.array(z.object({ roundId: z.string(), name: z.string(), total: z.number() })),
   pointsByDayOfWeek: z.array(z.object({ day: z.string(), points: z.number() })),

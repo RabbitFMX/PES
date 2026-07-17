@@ -75,7 +75,8 @@ src/
 │   ├── layout/           # AppShell, TopBar, BottomTabBar, ProfileMenu
 │   └── *.tsx             # Logo, RequireAuth, RequireAdmin, ThemeLanguageSwitcher
 ├── pages/                # one folder per screen; each owns its subcomponents
-│   ├── login/ dashboard/ log-activity/ leaderboard/ stats/ challenges/ admin/ profile/
+│   ├── login/ dashboard/ log-activity/ leaderboard/ stats/ challenges/ admin/ profile/ rules/
+│   │     # rules/ = the Rules screen; content in rules/rulesContent.ts (from PES 2.0.xlsx `pravidla`)
 ├── i18n/                 # cs.json / en.json + i18next setup
 └── test/setup.ts         # jest-dom matchers
 ```

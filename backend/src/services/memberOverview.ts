@@ -142,7 +142,59 @@ export async function getMemberOverview(
   const topActivities = [...actPts.entries()]
     .map(([activityId, v]) => ({ activityId, ...v }))
     .sort((a, b) => b.points - a.points)
-    .slice(0, 3)
+    .slice(0, 10)
+
+  // Total points split by activity (ALL entries, incl. a quick-add bucket) — the
+  // pie sums to lifetime points. Quick-add entries have no rate-table activity.
+  const paMap = new Map<string, { nameCs: string; nameEn: string; points: number }>()
+  for (const e of entries) {
+    const id = e.activityId ?? 'quickadd'
+    const names = e.activityId
+      ? { nameCs: e.activityNameCs ?? '', nameEn: e.activityNameEn ?? '' }
+      : { nameCs: 'Rychlý zápis', nameEn: 'Quick add' }
+    const cur = paMap.get(id) ?? { ...names, points: 0 }
+    cur.points = round2(cur.points + e.finalPoints)
+    paMap.set(id, cur)
+  }
+  const pointsByActivity = [...paMap.entries()]
+    .map(([activityId, v]) => ({ activityId, ...v }))
+    .sort((a, b) => b.points - a.points)
+
+  // Best week: the highest-scoring week, with its round/number and activity split.
+  let bestWeekId: string | null = null
+  let bestWeekVal = 0
+  for (const [wid, v] of weekTotal) {
+    if (v > bestWeekVal) {
+      bestWeekVal = v
+      bestWeekId = wid
+    }
+  }
+  let bestWeekDetail: MemberOverview['bestWeekDetail'] = null
+  if (bestWeekId) {
+    const wk = weeks.find((w) => w.id === bestWeekId)
+    const round = rounds.find((r) => r.id === wk?.round_id)
+    const acts = new Map<string, { activityName: string | null; points: number }>()
+    for (const e of entries) {
+      if (e.weekId !== bestWeekId) continue
+      const key = e.activityId ?? 'quickadd'
+      const cur = acts.get(key) ?? { activityName: e.activityId ? nm(e) : null, points: 0 }
+      cur.points = round2(cur.points + e.finalPoints)
+      acts.set(key, cur)
+    }
+    bestWeekDetail = {
+      roundName: round?.name ?? '',
+      weekNumber: wk?.week_number ?? 0,
+      weekStart: wk?.start_date ?? '',
+      points: round2(bestWeekVal),
+      activities: [...acts.values()].sort((a, b) => b.points - a.points),
+    }
+  }
+
+  // Weekly-consistency counts.
+  const weeksLogged = chronoTotals.filter((t) => t > 0).length
+  const weeksAtGoal = chronoTotals.filter((t) => t >= WEEKLY_GOAL).length
+  const weeksBelowGoal = weeksLogged - weeksAtGoal
+  const avgWeeklyPoints = weeksLogged > 0 ? round2(lifetimePoints / weeksLogged) : 0
 
   let cumKm = 0
   let cumElev = 0
@@ -168,13 +220,18 @@ export async function getMemberOverview(
       roundsPlayed: roundHistory.length,
       bestWeek: round2(Math.max(0, ...chronoTotals)),
       longestStreakWeeks: longestStreakWeeks(chronoTotals),
-      weeksAtGoal: chronoTotals.filter((t) => t >= WEEKLY_GOAL).length,
+      weeksAtGoal,
+      weeksBelowGoal,
+      weeksLogged,
+      avgWeeklyPoints,
       favouriteActivity:
         favouriteActivity(entries.map((e) => ({ activityName: nm(e), points: e.finalPoints }))) ??
         '—',
       totalKm: round2([...distMap.values()].reduce((s, v) => s + v.km, 0)),
       totalElevation: round2([...elevMap.values()].reduce((s, v) => s + v.m, 0)),
     },
+    bestWeekDetail,
+    pointsByActivity,
     topActivities,
     roundHistory,
     pointsByDayOfWeek: pointsByDay(
