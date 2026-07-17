@@ -173,11 +173,18 @@ export async function getMemberOverview(
   if (bestWeekId) {
     const wk = weeks.find((w) => w.id === bestWeekId)
     const round = rounds.find((r) => r.id === wk?.round_id)
-    const acts = new Map<string, { activityName: string | null; points: number }>()
+    const acts = new Map<
+      string,
+      { activityId: string | null; activityName: string | null; points: number }
+    >()
     for (const e of entries) {
       if (e.weekId !== bestWeekId) continue
       const key = e.activityId ?? 'quickadd'
-      const cur = acts.get(key) ?? { activityName: e.activityId ? nm(e) : null, points: 0 }
+      const cur = acts.get(key) ?? {
+        activityId: e.activityId,
+        activityName: e.activityId ? nm(e) : null,
+        points: 0,
+      }
       cur.points = round2(cur.points + e.finalPoints)
       acts.set(key, cur)
     }

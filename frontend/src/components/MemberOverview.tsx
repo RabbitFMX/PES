@@ -17,6 +17,7 @@ import { useAsync } from '../lib/useAsync'
 import { getMemberOverview } from '../lib/api'
 import { formatPoints } from '../lib/format'
 import { pesCategory } from '../lib/pesTitle'
+import { ActivityIcon } from './ActivityIcon'
 import { useLogActivity } from '../context/logActivity'
 import type { MemberOverview as Overview } from '../lib/types'
 import { Card } from './ui/Card'
@@ -188,7 +189,13 @@ function Body({ data, isSelf }: { data: Overview; isSelf?: boolean }) {
             <ul className="flex flex-col divide-y divide-border text-sm">
               {data.bestWeekDetail.activities.map((a, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 py-1.5">
-                  <span className="text-text">{a.activityName ?? t('overview.quickAdd')}</span>
+                  <span className="flex min-w-0 items-center gap-2 text-text">
+                    <ActivityIcon
+                      activityId={a.activityId}
+                      className="size-4 shrink-0 text-muted"
+                    />
+                    <span className="truncate">{a.activityName ?? t('overview.quickAdd')}</span>
+                  </span>
                   <span className="shrink-0 font-medium tabular-nums text-muted">
                     {formatPoints(a.points)} {t('overview.pts')}
                   </span>
@@ -203,12 +210,14 @@ function Body({ data, isSelf }: { data: Overview; isSelf?: boolean }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <PointsByActivityPie
           rows={data.pointsByActivity.map((a) => ({
+            activityId: a.activityId,
             name: lang === 'en' ? a.nameEn : a.nameCs,
             points: a.points,
           }))}
         />
         <TopActivities
           rows={data.topActivities.map((a) => ({
+            activityId: a.activityId,
             name: lang === 'en' ? a.nameEn : a.nameCs,
             points: a.points,
           }))}
@@ -274,6 +283,7 @@ function Body({ data, isSelf }: { data: Overview; isSelf?: boolean }) {
                 <ByActivity
                   title={t('overview.distance')}
                   rows={data.distanceByActivity.map((d) => ({
+                    activityId: d.activityId,
                     name: lang === 'en' ? d.nameEn : d.nameCs,
                     value: `${formatPoints(d.km)} km`,
                   }))}
@@ -281,6 +291,7 @@ function Body({ data, isSelf }: { data: Overview; isSelf?: boolean }) {
                 <ByActivity
                   title={t('overview.elevation')}
                   rows={data.elevationByActivity.map((d) => ({
+                    activityId: d.activityId,
                     name: lang === 'en' ? d.nameEn : d.nameCs,
                     value: `${formatPoints(d.m)} m`,
                   }))}
@@ -321,16 +332,25 @@ function CumChart({
   )
 }
 
-function ByActivity({ title, rows }: { title: string; rows: { name: string; value: string }[] }) {
+function ByActivity({
+  title,
+  rows,
+}: {
+  title: string
+  rows: { activityId: string | null; name: string; value: string }[]
+}) {
   if (rows.length === 0) return null
   return (
     <div>
       <div className="mb-2 text-sm font-medium text-muted">{title}</div>
       <ul className="flex flex-col gap-1">
         {rows.map((r) => (
-          <li key={r.name} className="flex items-center justify-between text-sm">
-            <span className="text-text">{r.name}</span>
-            <span className="tabular-nums text-muted">{r.value}</span>
+          <li key={r.name} className="flex items-center justify-between gap-2 text-sm">
+            <span className="flex min-w-0 items-center gap-2 text-text">
+              <ActivityIcon activityId={r.activityId} className="size-4 shrink-0 text-muted" />
+              <span className="truncate">{r.name}</span>
+            </span>
+            <span className="shrink-0 tabular-nums text-muted">{r.value}</span>
           </li>
         ))}
       </ul>
@@ -339,7 +359,11 @@ function ByActivity({ title, rows }: { title: string; rows: { name: string; valu
 }
 
 /** Total points split by activity as a donut, with a coloured legend + %. */
-function PointsByActivityPie({ rows }: { rows: { name: string; points: number }[] }) {
+function PointsByActivityPie({
+  rows,
+}: {
+  rows: { activityId: string | null; name: string; points: number }[]
+}) {
   const { t } = useTranslation()
   const sorted = [...rows].filter((r) => r.points > 0).sort((a, b) => b.points - a.points)
   const top = sorted.slice(0, MAX_PIE_SLICES)
@@ -347,7 +371,14 @@ function PointsByActivityPie({ rows }: { rows: { name: string; points: number }[
   const slices = [
     ...top.map((r, i) => ({ ...r, color: CHART_COLORS[i % CHART_COLORS.length] })),
     ...(restTotal > 0
-      ? [{ name: t('overview.otherActivities'), points: restTotal, color: 'var(--color-muted)' }]
+      ? [
+          {
+            activityId: null,
+            name: t('overview.otherActivities'),
+            points: restTotal,
+            color: 'var(--color-muted)',
+          },
+        ]
       : []),
   ]
   const total = slices.reduce((s, r) => s + r.points, 0)
@@ -388,6 +419,7 @@ function PointsByActivityPie({ rows }: { rows: { name: string; points: number }[
                   className="inline-block size-3 shrink-0 rounded-[3px]"
                   style={{ background: s.color }}
                 />
+                <ActivityIcon activityId={s.activityId} className="size-4 shrink-0 text-muted" />
                 <span className="min-w-0 flex-1 truncate text-text">{s.name}</span>
                 <span className="shrink-0 tabular-nums text-muted">
                   {Math.round((s.points / total) * 100)}%
@@ -402,7 +434,11 @@ function PointsByActivityPie({ rows }: { rows: { name: string; points: number }[
 }
 
 /** The member's favourite activities (top 10 by points). */
-function TopActivities({ rows }: { rows: { name: string; points: number }[] }) {
+function TopActivities({
+  rows,
+}: {
+  rows: { activityId: string | null; name: string; points: number }[]
+}) {
   const { t } = useTranslation()
   if (rows.length === 0) {
     return (
@@ -418,9 +454,10 @@ function TopActivities({ rows }: { rows: { name: string; points: number }[] }) {
       <h2 className="mb-3 text-lg font-semibold text-text">{t('overview.topActivities')}</h2>
       <ol className="flex flex-col gap-2">
         {rows.map((r, i) => (
-          <li key={i} className="flex items-center gap-3 text-sm">
+          <li key={i} className="flex items-center gap-2 text-sm">
             <span className="w-5 shrink-0 tabular-nums text-muted">{i + 1}.</span>
-            <span className="w-28 shrink-0 truncate text-text">{r.name}</span>
+            <ActivityIcon activityId={r.activityId} className="size-4 shrink-0 text-primary" />
+            <span className="w-24 shrink-0 truncate text-text">{r.name}</span>
             <span className="h-2 flex-1 overflow-hidden rounded-full bg-secondary/15">
               <span
                 className="block h-full rounded-full bg-primary"

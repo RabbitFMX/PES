@@ -68,7 +68,13 @@ export const memberOverviewSchema = z.object({
       weekNumber: z.number(),
       weekStart: z.string(),
       points: z.number(),
-      activities: z.array(z.object({ activityName: z.string().nullable(), points: z.number() })),
+      activities: z.array(
+        z.object({
+          activityId: z.string().nullable(),
+          activityName: z.string().nullable(),
+          points: z.number(),
+        }),
+      ),
     })
     .nullable(),
   /** All lifetime points split by activity (incl. a quick-add bucket) — for the pie. */

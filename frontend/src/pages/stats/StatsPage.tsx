@@ -21,6 +21,7 @@ import { Avatar } from '../../components/ui/Avatar'
 import { Badge } from '../../components/ui/Badge'
 import { Input } from '../../components/ui/Input'
 import { DogAvatar } from '../../components/DogAvatar'
+import { ActivityIcon } from '../../components/ActivityIcon'
 import { dogFromSeed, isDogAvatar, parseDog } from '../../lib/dogAvatar'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -222,8 +223,13 @@ function PackBody({ data }: { data: PackStats }) {
                         </div>
                         <div className="text-xs text-primary">🐾 {pesTitle(m)}</div>
                         {m.topActivities.length > 0 && (
-                          <div className="text-xs text-muted">
-                            {m.topActivities.map((a) => actName(a)).join(' · ')}
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
+                            {m.topActivities.map((a) => (
+                              <span key={a.activityId} className="inline-flex items-center gap-1">
+                                <ActivityIcon activityId={a.activityId} className="size-3.5" />
+                                {actName(a)}
+                              </span>
+                            ))}
                           </div>
                         )}
                       </div>
