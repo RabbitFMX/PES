@@ -236,6 +236,23 @@
     "sizeS": "Malý",
     "sizeM": "Střední",
     "sizeL": "Velký",
+    "avatarBreed": "Plemeno",
+    "avatarCoat": "Srst",
+    "avatarTail": "Ocas",
+    "avatarCollar": "Obojek",
+    "tail": {
+      "curl": "Stočený",
+      "saber": "Šavlovitý",
+      "bushy": "Huňatý",
+      "stub": "Krátký",
+      "sickle": "Srpovitý"
+    },
+    "collar": {
+      "none": "Žádný",
+      "flat": "Plochý + známka",
+      "bandana": "Šátek",
+      "spiked": "S hroty"
+    },
     "privacy": "Soukromí",
     "privacyHint": "Vyber, jaké nezbytné zpracování povolíš. Můžeš to kdykoli změnit; odvolání souhlasu zastaví příslušné skripty i marketingové e-maily.",
     "testData": "Testovací data",

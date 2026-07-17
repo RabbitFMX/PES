@@ -236,6 +236,23 @@
     "sizeS": "Small",
     "sizeM": "Medium",
     "sizeL": "Large",
+    "avatarBreed": "Breed",
+    "avatarCoat": "Coat",
+    "avatarTail": "Tail",
+    "avatarCollar": "Collar",
+    "tail": {
+      "curl": "Curled",
+      "saber": "Sabre",
+      "bushy": "Bushy",
+      "stub": "Stub",
+      "sickle": "Sickle"
+    },
+    "collar": {
+      "none": "None",
+      "flat": "Flat + tag",
+      "bandana": "Bandana",
+      "spiked": "Spiked"
+    },
     "privacy": "Privacy",
     "privacyHint": "Choose what non-essential processing you allow. You can change this any time; withdrawing consent stops the related scripts and marketing email.",
     "testData": "Test data",

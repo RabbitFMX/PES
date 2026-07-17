@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/auth'
@@ -8,15 +8,16 @@ import { useToast } from '../../context/toast'
 import { updateProfile } from '../../lib/api'
 import { cn } from '../../lib/cn'
 import {
-  DOG_COLORS,
-  DOG_COLOR_IDS,
-  DOG_STYLES,
+  DOG_BREEDS,
+  DOG_BREED_BY_ID,
+  DOG_COAT_BY_ID,
+  DOG_COLLARS,
+  DOG_TAILS,
   dogFromSeed,
   isDogAvatar,
   parseDog,
   serializeDog,
   type DogConfig,
-  type DogSize,
 } from '../../lib/dogAvatar'
 import { isTestDataEnabled, setTestDataEnabled } from '../../lib/testData'
 import type { Lang, ThemePref } from '../../lib/types'
@@ -90,7 +91,7 @@ export function ProfilePage() {
       {/* Avatar builder */}
       <Card className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
-          <span className="inline-block size-20 overflow-hidden rounded-full bg-secondary/5 ring-1 ring-border">
+          <span className="inline-block size-24 overflow-hidden rounded-[var(--radius-md)] bg-secondary/5 ring-1 ring-border">
             <DogAvatar config={dog} className="h-full w-full" title={name || user.displayName} />
           </span>
           <div className="flex-1">
@@ -102,64 +103,105 @@ export function ProfilePage() {
           </div>
         </div>
 
-        {/* Style */}
+        {/* Breed */}
         <div>
-          <p className="mb-2 text-sm font-medium text-text">{t('settings.avatarStyle')}</p>
+          <p className="mb-2 text-sm font-medium text-text">{t('settings.avatarBreed')}</p>
+          <div className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
+            {DOG_BREEDS.map((b) => {
+              const previewCoat = b.coats.includes(dog.coat) ? dog.coat : b.coats[0]
+              const selected = dog.breed === b.id
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  aria-pressed={selected}
+                  aria-label={lang === 'en' ? b.nameEn : b.nameCs}
+                  onClick={() =>
+                    setDog({
+                      ...dog,
+                      breed: b.id,
+                      coat: b.coats.includes(dog.coat) ? dog.coat : b.coats[0],
+                      tail: b.tail,
+                    })
+                  }
+                  className={cn(
+                    'flex flex-col items-center gap-1 rounded-[var(--radius-md)] p-1.5 ring-2 transition-colors',
+                    selected ? 'ring-primary' : 'ring-border hover:ring-muted',
+                  )}
+                >
+                  <DogAvatar
+                    config={{ breed: b.id, coat: previewCoat, tail: b.tail, collar: 'none' }}
+                    className="h-12 w-12"
+                  />
+                  <span className="w-full truncate text-center text-[11px] text-muted">
+                    {lang === 'en' ? b.nameEn : b.nameCs}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Coat (breed-appropriate colours + patterns) */}
+        <div>
+          <p className="mb-2 text-sm font-medium text-text">{t('settings.avatarCoat')}</p>
           <div className="flex flex-wrap gap-2">
-            {DOG_STYLES.map((style) => (
-              <button
-                key={style}
-                type="button"
-                aria-label={`${t('settings.avatarStyle')}: ${style}`}
-                aria-pressed={dog.style === style}
-                onClick={() => setDog({ ...dog, style })}
-                className={cn(
-                  'rounded-[var(--radius-md)] p-1 ring-2 transition-colors',
-                  dog.style === style ? 'ring-primary' : 'ring-border hover:ring-muted',
-                )}
+            {(DOG_BREED_BY_ID[dog.breed] ?? DOG_BREEDS[0]).coats.map((coatId) => {
+              const c = DOG_COAT_BY_ID[coatId]
+              const selected = dog.coat === coatId
+              return (
+                <button
+                  key={coatId}
+                  type="button"
+                  aria-pressed={selected}
+                  aria-label={lang === 'en' ? c.nameEn : c.nameCs}
+                  title={lang === 'en' ? c.nameEn : c.nameCs}
+                  onClick={() => setDog({ ...dog, coat: coatId })}
+                  className={cn(
+                    'size-9 overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-surface transition-transform',
+                    selected ? 'ring-primary' : 'ring-transparent hover:scale-110',
+                  )}
+                  style={{
+                    background: c.pattern
+                      ? `radial-gradient(circle at 30% 30%, ${c.patternColor} 0 25%, ${c.base} 26%)`
+                      : c.base,
+                  }}
+                />
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Tail */}
+        <div>
+          <p className="mb-2 text-sm font-medium text-text">{t('settings.avatarTail')}</p>
+          <div className="flex flex-wrap gap-2">
+            {DOG_TAILS.map((tail) => (
+              <PillButton
+                key={tail}
+                selected={dog.tail === tail}
+                onClick={() => setDog({ ...dog, tail })}
               >
-                <span className="inline-block size-12 overflow-hidden rounded-full bg-secondary/5">
-                  <DogAvatar config={{ ...dog, style }} className="h-full w-full" />
-                </span>
-              </button>
+                {t(`settings.tail.${tail}`)}
+              </PillButton>
             ))}
           </div>
         </div>
 
-        {/* Colour */}
+        {/* Collar */}
         <div>
-          <p className="mb-2 text-sm font-medium text-text">{t('settings.avatarColor')}</p>
+          <p className="mb-2 text-sm font-medium text-text">{t('settings.avatarCollar')}</p>
           <div className="flex flex-wrap gap-2">
-            {DOG_COLOR_IDS.map((color) => (
-              <button
-                key={color}
-                type="button"
-                aria-label={`${t('settings.avatarColor')}: ${color}`}
-                aria-pressed={dog.color === color}
-                onClick={() => setDog({ ...dog, color })}
-                style={{ background: DOG_COLORS[color].base }}
-                className={cn(
-                  'size-8 rounded-full ring-2 ring-offset-2 ring-offset-surface transition-transform',
-                  dog.color === color ? 'ring-primary' : 'ring-transparent hover:scale-110',
-                )}
-              />
+            {DOG_COLLARS.map((collar) => (
+              <PillButton
+                key={collar}
+                selected={dog.collar === collar}
+                onClick={() => setDog({ ...dog, collar })}
+              >
+                {t(`settings.collar.${collar}`)}
+              </PillButton>
             ))}
           </div>
-        </div>
-
-        {/* Size */}
-        <div>
-          <p className="mb-2 text-sm font-medium text-text">{t('settings.avatarSize')}</p>
-          <SegmentedControl
-            ariaLabel={t('settings.avatarSize')}
-            value={dog.size}
-            onChange={(size: DogSize) => setDog({ ...dog, size })}
-            segments={[
-              { value: 'sm', label: t('settings.sizeS') },
-              { value: 'md', label: t('settings.sizeM') },
-              { value: 'lg', label: t('settings.sizeL') },
-            ]}
-          />
         </div>
 
         <div className="flex justify-end">
@@ -247,5 +289,31 @@ export function ProfilePage() {
         </Button>
       </div>
     </div>
+  )
+}
+
+function PillButton({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={cn(
+        'rounded-full px-3 py-1 text-sm ring-1 transition-colors',
+        selected
+          ? 'bg-primary/10 text-primary ring-primary'
+          : 'text-muted ring-border hover:text-text',
+      )}
+    >
+      {children}
+    </button>
   )
 }
