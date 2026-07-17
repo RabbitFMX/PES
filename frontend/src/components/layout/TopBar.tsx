@@ -10,6 +10,7 @@ const links = [
   { to: '/leaderboard', key: 'nav.leaderboard', end: false },
   { to: '/challenges', key: 'nav.challenges', end: false },
   { to: '/stats', key: 'nav.stats', end: false },
+  { to: '/rules', key: 'nav.rules', end: false },
 ]
 
 export function TopBar({ onLogActivity }: { onLogActivity: () => void }) {

@@ -71,10 +71,22 @@ export interface MemberOverview {
     bestWeek: number
     longestStreakWeeks: number
     weeksAtGoal: number
+    weeksBelowGoal: number
+    weeksLogged: number
+    avgWeeklyPoints: number
     favouriteActivity: string
     totalKm: number
     totalElevation: number
   }
+  bestWeekDetail: {
+    roundName: string
+    weekNumber: number
+    weekStart: string
+    points: number
+    activities: { activityName: string | null; points: number }[]
+  } | null
+  /** All lifetime points split by activity (incl. a quick-add bucket) — for the pie. */
+  pointsByActivity: (OverviewActivityRef & { points: number })[]
   topActivities: (OverviewActivityRef & { points: number })[]
   roundHistory: { roundId: string; name: string; total: number }[]
   pointsByDayOfWeek: { day: string; points: number }[]

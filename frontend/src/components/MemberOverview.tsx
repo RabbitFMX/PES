@@ -3,8 +3,11 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip as RTooltip,
   XAxis,
@@ -40,6 +43,21 @@ const tooltip = {
 function shortRound(name: string): string {
   return name.split('—')[0].trim() || name
 }
+
+/** Categorical palette for the by-activity pie (theme tokens; see theme.css). */
+const CHART_COLORS = [
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
+  'var(--chart-6)',
+  'var(--chart-7)',
+  'var(--chart-8)',
+  'var(--chart-9)',
+  'var(--chart-10)',
+]
+const MAX_PIE_SLICES = 9
 
 export function MemberOverview({ memberId, isSelf }: { memberId: string; isSelf?: boolean }) {
   const { data, loading, error, reload } = useAsync<Overview>(
@@ -140,15 +158,62 @@ function Body({ data, isSelf }: { data: Overview; isSelf?: boolean }) {
       </div>
 
       {/* Record KPI tiles */}
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <Tile label={t('stats.bestWeek')} value={formatPoints(data.records.bestWeek)} />
+        <Tile label={t('overview.avgWeekly')} value={formatPoints(data.records.avgWeeklyPoints)} />
+        <Tile label={t('stats.weeksAtGoal')} value={String(data.records.weeksAtGoal)} />
+        <Tile label={t('overview.weeksBelow')} value={String(data.records.weeksBelowGoal)} />
         <Tile
           label={t('stats.longestStreak')}
           value={t('stats.weeks', { count: data.records.longestStreakWeeks })}
         />
-        <Tile label={t('stats.weeksAtGoal')} value={String(data.records.weeksAtGoal)} />
         <Tile label={t('stats.favouriteActivity')} value={data.records.favouriteActivity} />
       </section>
+
+      {/* Best week — points, which week, and its activity breakdown */}
+      {data.bestWeekDetail && data.bestWeekDetail.points > 0 && (
+        <Card className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold text-text">{t('overview.bestWeekTitle')}</h2>
+            <span className="text-sm text-muted">
+              {shortRound(data.bestWeekDetail.roundName)} ·{' '}
+              {t('overview.weekN', { n: data.bestWeekDetail.weekNumber })}
+            </span>
+          </div>
+          <div className="text-3xl font-bold text-text">
+            {formatPoints(data.bestWeekDetail.points)}{' '}
+            <span className="text-base font-normal text-muted">{t('overview.pts')}</span>
+          </div>
+          {data.bestWeekDetail.activities.length > 0 && (
+            <ul className="flex flex-col divide-y divide-border text-sm">
+              {data.bestWeekDetail.activities.map((a, i) => (
+                <li key={i} className="flex items-center justify-between gap-2 py-1.5">
+                  <span className="text-text">{a.activityName ?? t('overview.quickAdd')}</span>
+                  <span className="shrink-0 font-medium tabular-nums text-muted">
+                    {formatPoints(a.points)} {t('overview.pts')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
+
+      {/* Points by activity (pie) + favourite activities (top 10) */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <PointsByActivityPie
+          rows={data.pointsByActivity.map((a) => ({
+            name: lang === 'en' ? a.nameEn : a.nameCs,
+            points: a.points,
+          }))}
+        />
+        <TopActivities
+          rows={data.topActivities.map((a) => ({
+            name: lang === 'en' ? a.nameEn : a.nameCs,
+            points: a.points,
+          }))}
+        />
+      </div>
 
       {/* Points by round */}
       <Card>
@@ -270,6 +335,105 @@ function ByActivity({ title, rows }: { title: string; rows: { name: string; valu
         ))}
       </ul>
     </div>
+  )
+}
+
+/** Total points split by activity as a donut, with a coloured legend + %. */
+function PointsByActivityPie({ rows }: { rows: { name: string; points: number }[] }) {
+  const { t } = useTranslation()
+  const sorted = [...rows].filter((r) => r.points > 0).sort((a, b) => b.points - a.points)
+  const top = sorted.slice(0, MAX_PIE_SLICES)
+  const restTotal = sorted.slice(MAX_PIE_SLICES).reduce((s, r) => s + r.points, 0)
+  const slices = [
+    ...top.map((r, i) => ({ ...r, color: CHART_COLORS[i % CHART_COLORS.length] })),
+    ...(restTotal > 0
+      ? [{ name: t('overview.otherActivities'), points: restTotal, color: 'var(--color-muted)' }]
+      : []),
+  ]
+  const total = slices.reduce((s, r) => s + r.points, 0)
+
+  return (
+    <Card>
+      <h2 className="mb-3 text-lg font-semibold text-text">{t('overview.pointsByActivity')}</h2>
+      {total === 0 ? (
+        <EmptyState title={t('stats.empty')} />
+      ) : (
+        <div className="flex flex-col items-center gap-4 sm:flex-row">
+          <ResponsiveContainer width="100%" height={200} className="max-w-[220px]">
+            <PieChart>
+              <Pie
+                data={slices}
+                dataKey="points"
+                nameKey="name"
+                innerRadius={45}
+                outerRadius={80}
+                paddingAngle={1}
+                stroke="var(--color-surface)"
+              >
+                {slices.map((s, i) => (
+                  <Cell key={i} fill={s.color} />
+                ))}
+              </Pie>
+              <RTooltip
+                {...tooltip}
+                formatter={(v) => `${formatPoints(Number(v))} ${t('overview.pts')}`}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          <ul className="flex w-full flex-col gap-1.5 text-sm">
+            {slices.map((s, i) => (
+              <li key={i} className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="inline-block size-3 shrink-0 rounded-[3px]"
+                  style={{ background: s.color }}
+                />
+                <span className="min-w-0 flex-1 truncate text-text">{s.name}</span>
+                <span className="shrink-0 tabular-nums text-muted">
+                  {Math.round((s.points / total) * 100)}%
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+/** The member's favourite activities (top 10 by points). */
+function TopActivities({ rows }: { rows: { name: string; points: number }[] }) {
+  const { t } = useTranslation()
+  if (rows.length === 0) {
+    return (
+      <Card>
+        <h2 className="mb-3 text-lg font-semibold text-text">{t('overview.topActivities')}</h2>
+        <EmptyState title={t('overview.noDetailYet')} />
+      </Card>
+    )
+  }
+  const max = Math.max(...rows.map((r) => r.points), 1)
+  return (
+    <Card>
+      <h2 className="mb-3 text-lg font-semibold text-text">{t('overview.topActivities')}</h2>
+      <ol className="flex flex-col gap-2">
+        {rows.map((r, i) => (
+          <li key={i} className="flex items-center gap-3 text-sm">
+            <span className="w-5 shrink-0 tabular-nums text-muted">{i + 1}.</span>
+            <span className="w-28 shrink-0 truncate text-text">{r.name}</span>
+            <span className="h-2 flex-1 overflow-hidden rounded-full bg-secondary/15">
+              <span
+                className="block h-full rounded-full bg-primary"
+                style={{ width: `${Math.max(4, (r.points / max) * 100)}%` }}
+              />
+            </span>
+            <span className="w-14 shrink-0 text-right tabular-nums text-muted">
+              {formatPoints(r.points)}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </Card>
   )
 }
 

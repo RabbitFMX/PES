@@ -10,6 +10,7 @@ import { LeaderboardPage } from './pages/leaderboard/LeaderboardPage'
 import { ChallengesPage } from './pages/challenges/ChallengesPage'
 import { AdminPage } from './pages/admin/AdminPage'
 import { ProfilePage } from './pages/profile/ProfilePage'
+import { RulesPage } from './pages/rules/RulesPage'
 
 // Code-split the chart-heavy pages — they pull in Recharts, which we keep out of
 // the initial bundle.
@@ -66,6 +67,7 @@ function App() {
             }
           />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/rules" element={<RulesPage />} />
           <Route element={<RequireAdmin />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>
