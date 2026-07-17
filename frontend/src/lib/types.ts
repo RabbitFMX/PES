@@ -83,7 +83,7 @@ export interface MemberOverview {
     weekNumber: number
     weekStart: string
     points: number
-    activities: { activityName: string | null; points: number }[]
+    activities: { activityId: string | null; activityName: string | null; points: number }[]
   } | null
   /** All lifetime points split by activity (incl. a quick-add bucket) — for the pie. */
   pointsByActivity: (OverviewActivityRef & { points: number })[]

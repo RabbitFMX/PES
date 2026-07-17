@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Activity } from '../../lib/types'
 import { cn } from '../../lib/cn'
 import { Input } from '../../components/ui/Input'
+import { ActivityIcon } from '../../components/ActivityIcon'
 import { shortRate } from '../../lib/activityScoring'
 
 interface ActivityPickerProps {
@@ -53,10 +54,16 @@ export function ActivityPicker({ activities, value, onChange, lang }: ActivityPi
                 selected ? 'bg-primary/10 text-primary' : 'text-text hover:bg-secondary/5',
               )}
             >
-              <span className="flex min-w-0 flex-col">
-                <span className="truncate font-medium">{primary}</span>
-                <span className="text-xs text-muted tabular-nums">
-                  {shortRate(a, t('logActivity.scoring.pts'))}
+              <span className="flex min-w-0 items-center gap-2.5">
+                <ActivityIcon
+                  activityId={a.id}
+                  className={cn('size-5 shrink-0', selected ? 'text-primary' : 'text-muted')}
+                />
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate font-medium">{primary}</span>
+                  <span className="text-xs text-muted tabular-nums">
+                    {shortRate(a, t('logActivity.scoring.pts'))}
+                  </span>
                 </span>
               </span>
               <span className="shrink-0 text-xs text-muted">{secondary}</span>
