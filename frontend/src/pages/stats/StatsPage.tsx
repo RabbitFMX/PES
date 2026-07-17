@@ -13,13 +13,15 @@ import {
   YAxis,
 } from 'recharts'
 import { useAsync } from '../../lib/useAsync'
-import { getPackStats } from '../../lib/api'
+import { getPackStats, getPackWeekly } from '../../lib/api'
 import { formatPoints } from '../../lib/format'
-import type { PackAllTimeRow, PackStats } from '../../lib/types'
+import type { PackAllTimeRow, PackStats, PackWeekly } from '../../lib/types'
 import { Card } from '../../components/ui/Card'
 import { Avatar } from '../../components/ui/Avatar'
 import { Badge } from '../../components/ui/Badge'
 import { Input } from '../../components/ui/Input'
+import { Select } from '../../components/ui/Select'
+import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { DogAvatar } from '../../components/DogAvatar'
 import { ActivityIcon } from '../../components/ActivityIcon'
 import { dogFromSeed, isDogAvatar, parseDog } from '../../lib/dogAvatar'
@@ -156,6 +158,30 @@ function PackBody({ data }: { data: PackStats }) {
     [data.rounds, selectedMembers],
   )
 
+  // Compare by rounds (default) or by week within a chosen round.
+  const [compareMode, setCompareMode] = useState<'rounds' | 'weeks'>('rounds')
+  const defaultWeekRound =
+    data.rounds.find((r) => r.status === 'open')?.roundId ??
+    data.rounds[data.rounds.length - 1]?.roundId ??
+    ''
+  const [weekRoundId, setWeekRoundId] = useState(defaultWeekRound)
+  const weekly = useAsync<PackWeekly>(() => getPackWeekly(weekRoundId || undefined), [weekRoundId])
+  const roundOptions = [...data.rounds]
+    .reverse()
+    .map((r) => ({ value: r.roundId, label: shortRound(r.name) }))
+  const weeklyData = useMemo(() => {
+    const w = weekly.data
+    if (!w) return []
+    return w.weeks.map((wk, i) => {
+      const row: Record<string, string | number | null> = { week: `T${wk.weekNumber}` }
+      for (const m of selectedMembers) {
+        const wm = w.members.find((x) => x.memberId === m.memberId)
+        row[m.displayName] = wm ? wm.weekly[i] : null
+      }
+      return row
+    })
+  }, [weekly.data, selectedMembers])
+
   // Round-winners accordion → full ranking with medals.
   const [openRound, setOpenRound] = useState<string | null>(null)
   const roundRanking = (roundIndex: number) => {
@@ -267,6 +293,27 @@ function PackBody({ data }: { data: PackStats }) {
       <Card>
         <h2 className="text-lg font-semibold text-text">{t('stats.compare')}</h2>
         <p className="mb-3 text-xs text-muted">{t('stats.compareHint', { max: MAX_COMPARE })}</p>
+        <div className="mb-3 max-w-xs">
+          <SegmentedControl
+            ariaLabel={t('stats.compare')}
+            value={compareMode}
+            onChange={setCompareMode}
+            segments={[
+              { value: 'rounds', label: t('stats.byRound') },
+              { value: 'weeks', label: t('stats.byWeek') },
+            ]}
+          />
+        </div>
+        {compareMode === 'weeks' && roundOptions.length > 0 && (
+          <div className="mb-3 max-w-xs">
+            <Select
+              label={t('stats.round')}
+              value={weekRoundId}
+              onChange={(e) => setWeekRoundId(e.target.value)}
+              options={roundOptions}
+            />
+          </div>
+        )}
         <div className="mb-2 max-w-xs">
           <Input
             label={t('stats.searchMember')}
@@ -303,12 +350,23 @@ function PackBody({ data }: { data: PackStats }) {
 
         {selectedMembers.length === 0 ? (
           <EmptyState title={t('stats.comparePick')} />
+        ) : compareMode === 'weeks' && weekly.loading ? (
+          <Skeleton className="h-[300px]" />
+        ) : compareMode === 'weeks' && weeklyData.length === 0 ? (
+          <EmptyState title={t('stats.empty')} />
         ) : (
           <>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={compareData} margin={{ left: 4, right: 16 }}>
+              <LineChart
+                data={compareMode === 'weeks' ? weeklyData : compareData}
+                margin={{ left: 4, right: 16 }}
+              >
                 <CartesianGrid stroke="var(--chart-grid)" />
-                <XAxis dataKey="round" stroke="var(--chart-axis)" fontSize={12} />
+                <XAxis
+                  dataKey={compareMode === 'weeks' ? 'week' : 'round'}
+                  stroke="var(--chart-axis)"
+                  fontSize={12}
+                />
                 <YAxis stroke="var(--chart-axis)" fontSize={12} width={44} />
                 <RTooltip {...tooltip} />
                 {selectedMembers.map((m, idx) => (

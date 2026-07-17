@@ -21,6 +21,7 @@ import type {
   MemberDirectoryEntry,
   MemberOverview,
   PackStats,
+  PackWeekly,
   PastChallenge,
   QuickAddInput,
   Round,
@@ -86,6 +87,12 @@ export function getDashboard(): Promise<DashboardData> {
 
 export function getPackStats(): Promise<PackStats> {
   return apiClient.get<PackStats>('/pack-stats')
+}
+
+/** Per-week per-member points for one round (default: open/most-recent). */
+export function getPackWeekly(roundId?: string): Promise<PackWeekly> {
+  const query = roundId ? `?roundId=${encodeURIComponent(roundId)}` : ''
+  return apiClient.get<PackWeekly>(`/pack-weekly${query}`)
 }
 
 /* ---- Personal overview + view-others ---- */

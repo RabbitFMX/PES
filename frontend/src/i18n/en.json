@@ -143,6 +143,8 @@
     "compare": "Compare members",
     "compareHint": "Pick up to {{max}} members to compare",
     "comparePick": "Pick members to compare",
+    "byRound": "By round",
+    "byWeek": "By week",
     "pes": {
       "runner": "PES runner",
       "swimmer": "PES swimmer",

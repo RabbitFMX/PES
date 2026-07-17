@@ -141,6 +141,14 @@ export interface PackMemberRoundTotals {
   totals: (number | null)[]
 }
 
+/** Per-week per-member points for one round (compare-by-week chart). */
+export interface PackWeekly {
+  roundId: string
+  roundName: string
+  weeks: { weekNumber: number }[]
+  members: { memberId: string; displayName: string; weekly: (number | null)[] }[]
+}
+
 export interface PackStats {
   totals: {
     rounds: number
