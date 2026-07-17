@@ -231,7 +231,10 @@
     "sizeM": "Střední",
     "sizeL": "Velký",
     "privacy": "Soukromí",
-    "privacyHint": "Vyber, jaké nezbytné zpracování povolíš. Můžeš to kdykoli změnit; odvolání souhlasu zastaví příslušné skripty i marketingové e-maily."
+    "privacyHint": "Vyber, jaké nezbytné zpracování povolíš. Můžeš to kdykoli změnit; odvolání souhlasu zastaví příslušné skripty i marketingové e-maily.",
+    "testData": "Testovací data",
+    "testDataHint": "Naplní statistiky a dashboard vygenerovanými detailními daty po aktivitách odvozenými z reálných týdenních součtů (součty zůstanou stejné). Pouze pro testování.",
+    "testDataToggle": "Zobrazit vygenerovaná testovací data"
   },
   "consent": {
     "title": "Tvé soukromí",

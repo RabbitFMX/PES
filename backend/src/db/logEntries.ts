@@ -1,5 +1,13 @@
 import { supabase, type Supabase } from './supabaseClient'
 import type { LogEntryRow, NewLogEntry } from './types'
+import { listActiveActivities } from './activities'
+import { listWeeks } from './weeks'
+import { isTestMode } from '../testData/context'
+import {
+  generateActivityPoints,
+  generateMemberDetailedEntries,
+  type ActivityMeta,
+} from '../testData/generator'
 
 /**
  * Query helpers for the `log_entry` table. Raw Supabase queries live here,
@@ -116,7 +124,7 @@ export async function listMemberEntriesDetailed(
     activity: { name_cs: string; name_en: string } | null
   }
 
-  return ((data ?? []) as unknown as Row[]).map((r) => ({
+  const rows = ((data ?? []) as unknown as Row[]).map((r) => ({
     activityDate: r.activity_date,
     quantity: Number(r.quantity),
     unit: r.unit,
@@ -129,6 +137,25 @@ export async function listMemberEntriesDetailed(
     activityId: r.activity_id,
     activityNameCs: r.activity?.name_cs ?? null,
     activityNameEn: r.activity?.name_en ?? null,
+  }))
+
+  // Test-data mode: replace with generated detail that preserves each week's total.
+  if (isTestMode()) {
+    return generateMemberDetailedEntries(rows, await activityMetas(client))
+  }
+  return rows
+}
+
+/** Active activities mapped to the generator's ActivityMeta shape (test data). */
+async function activityMetas(client: Supabase): Promise<ActivityMeta[]> {
+  const activities = await listActiveActivities(client)
+  return activities.map((a) => ({
+    id: a.id,
+    unit: a.unit,
+    pointsPerUnit: Number(a.points_per_unit),
+    nameCs: a.name_cs,
+    nameEn: a.name_en,
+    hasElevationBonus: a.has_elevation_bonus,
   }))
 }
 
@@ -148,6 +175,24 @@ export async function listDetailedActivityPoints(client: Supabase = supabase): P
     final_points: number
   }[]
 > {
+  // Test-data mode: distribute each member's real lifetime total across a few
+  // activities (sum preserved), so pack "strongest activities" fills in.
+  if (isTestMode()) {
+    const weeks = await listWeeks(client)
+    const entries = await listRoundEntries(
+      weeks.map((w) => w.id),
+      client,
+    )
+    const totalByMember = new Map<string, number>()
+    for (const e of entries) {
+      totalByMember.set(e.member_id, (totalByMember.get(e.member_id) ?? 0) + e.final_points)
+    }
+    const metas = await activityMetas(client)
+    return [...totalByMember.entries()].flatMap(([memberId, total]) =>
+      generateActivityPoints(memberId, total, metas),
+    )
+  }
+
   const PAGE = 1000
   type Row = {
     member_id: string

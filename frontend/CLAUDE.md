@@ -65,6 +65,7 @@ src/
 │   ├── useAsync.ts       # loading/error/reload hook every data screen uses
 │   ├── consent.ts        # GDPR consent: per-browser storage + policy version/hash (fnv1a)
 │   ├── analytics.ts, marketing.ts  # non-essential script SEAMS — init/teardown only, gated by consent
+│   ├── testData.ts       # "test data" toggle (localStorage) → X-PES-Test-Data header via apiClient
 │   ├── format.ts, cn.ts  # pure helpers
 ├── context/              # providers, split into hook (.ts) + provider (.tsx):
 │   │                       #   theme, auth, toast, logActivity, consent
@@ -88,6 +89,11 @@ src/
   (`recordConsent` in `lib/api.ts`) for the server audit log. To wire a real
   analytics/marketing vendor, fill in `lib/analytics.ts` / `lib/marketing.ts` —
   the consent gate already wraps them.
+- **Test-data toggle:** Profile has a "test data" switch (`lib/testData.ts`,
+  persisted in localStorage). When on, `apiClient` adds the `X-PES-Test-Data`
+  header and the backend serves generated per-activity detail (real weekly
+  totals preserved) so all stats/dashboard screens can be exercised. Toggling
+  reloads the page so every screen refetches.
 - **Design system lives in two places only:** `styles/theme.css` (tokens) and
   `components/ui/` (primitives). Screens compose these; they do not invent
   styles.

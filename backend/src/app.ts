@@ -15,6 +15,7 @@ import { signupRouter } from './routes/signup'
 import { statsRouter } from './routes/stats'
 import { mountProtected, optionalAuth } from './middleware/auth'
 import { errorHandler } from './middleware/errorHandler'
+import { testModeMiddleware } from './middleware/testMode'
 
 export function createApp() {
   const app = express()
@@ -29,6 +30,9 @@ export function createApp() {
 
   app.use(cors({ origin: corsOrigin }))
   app.use(express.json())
+  // Read-only "test data" toggle: when the request carries X-PES-Test-Data,
+  // detailed stats are served from generated data (see middleware/testMode.ts).
+  app.use(testModeMiddleware)
 
   // Public routes (no auth — signup is how a new user gets their first member row).
   app.use('/api', healthRouter)

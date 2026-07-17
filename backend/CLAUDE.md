@@ -87,8 +87,24 @@ resource routers → error handler last). The layers:
 - `src/db/` — Supabase client, typed row types (`types.ts`), per-table query
   helpers (e.g. `activities.ts`), and the `migrate.ts` / `seed.ts` runners.
   Keep raw SQL/queries here, never in routes.
-- `src/middleware/` — auth guard and the central error handler
+- `src/middleware/` — auth guard, the central error handler, and the test-data toggle
+- `src/testData/` — deterministic test-data generator + the request-scoped flag
 - `src/llm/` — Claude Haiku client + `log_activities` tool def (seminar 6)
+
+### Test-data mode
+
+A read-only testing aid for exercising the detail-heavy stats/overview/pack
+screens (imported history is weekly totals only, so per-activity detail is
+otherwise empty). When a request carries `X-PES-Test-Data: 1`,
+`middleware/testMode.ts` runs the handler inside an AsyncLocalStorage context
+(`testData/context.ts`), and the two DETAILED readers in `db/logEntries.ts`
+(`listMemberEntriesDetailed`, `listDetailedActivityPoints`) return
+DETERMINISTICALLY GENERATED per-activity data (`testData/generator.ts`) instead
+of the sparse real rows. Generation preserves each member's real per-week /
+lifetime totals EXACTLY (only the breakdown is synthesized), so points, ranks,
+streaks and leaderboards are unchanged — only the per-activity/day charts fill
+in. Nothing is written; turning the header off restores real data next request.
+The frontend toggle lives in Profile (`frontend/src/lib/testData.ts`).
 
 ### Authentication & guards
 
