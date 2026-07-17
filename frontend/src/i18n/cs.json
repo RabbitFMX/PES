@@ -143,6 +143,8 @@
     "compare": "Porovnání členů",
     "compareHint": "Vyber až {{max}} členy pro porovnání",
     "comparePick": "Vyber členy pro porovnání",
+    "byRound": "Po kolech",
+    "byWeek": "Po týdnech",
     "pes": {
       "runner": "PES běžec",
       "swimmer": "PES plavec",

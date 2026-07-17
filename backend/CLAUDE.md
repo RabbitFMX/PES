@@ -153,6 +153,9 @@ attaches `req.member` when a valid token is present and otherwise continues.
   top-10 `topActivities`, per-round history, cumulative distance/elevation ✅
 - `GET /api/pack-stats` — whole-pack comparison (Statistiky): all-time ranking,
   per-round group totals + winners, per-member×round matrix ✅
+- `GET /api/pack-weekly?roundId=…` — per-week per-member points for one round
+  (defaults to the open/most-recent round); backs the compare-members-by-week
+  chart ✅
 - `GET /api/activities` — active rate table for the log-activity screen ✅ (chunk 5)
 - `POST /api/log-entries/preview` — compute points for an entry, no write ✅ (chunk 6)
 - `POST /api/log-entries` — commit a log entry ✅ (chunk 6)
