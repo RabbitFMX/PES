@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { isTestDataEnabled, TEST_DATA_HEADER } from './testData'
 
 /**
  * Tiny fetch wrapper for the PES backend. It prefixes `VITE_API_BASE_URL`,
@@ -30,6 +31,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...(init.headers as Record<string, string> | undefined),
   }
   if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`
+  // Testing aid: ask the backend for generated detailed stats (see lib/testData).
+  if (isTestDataEnabled()) headers[TEST_DATA_HEADER] = '1'
 
   const res = await fetch(`${BASE_URL}${path}`, { ...init, headers })
 

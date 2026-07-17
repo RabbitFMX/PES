@@ -18,6 +18,7 @@ import {
   type DogConfig,
   type DogSize,
 } from '../../lib/dogAvatar'
+import { isTestDataEnabled, setTestDataEnabled } from '../../lib/testData'
 import type { Lang, ThemePref } from '../../lib/types'
 import { Card } from '../../components/ui/Card'
 import { Button, ButtonLink } from '../../components/ui/Button'
@@ -35,6 +36,7 @@ export function ProfilePage() {
   const navigate = useNavigate()
 
   const [name, setName] = useState(user?.displayName ?? '')
+  const [testData, setTestData] = useState(isTestDataEnabled)
   const [dog, setDog] = useState<DogConfig>(() =>
     isDogAvatar(user?.avatarUrl) ? parseDog(user?.avatarUrl) : dogFromSeed(user?.id ?? 'dog'),
   )
@@ -60,6 +62,13 @@ export function ProfilePage() {
     setTheme(next)
     updateUser({ themePref: next })
     void persist({ themePref: next }).catch(() => {})
+  }
+
+  function toggleTestData(next: boolean) {
+    setTestData(next)
+    setTestDataEnabled(next)
+    // Reload so every already-loaded screen refetches with/without generated data.
+    window.location.reload()
   }
 
   async function saveProfile() {
@@ -206,6 +215,17 @@ export function ProfilePage() {
           checked={consent.marketing}
           onChange={(v) => updateCategory('marketing', v)}
         />
+      </Card>
+
+      {/* Test data — a testing aid. Generates detailed per-activity data from the
+          real weekly totals (totals stay the same) so all stats/charts can be
+          exercised. Reloads on toggle so every screen refetches. */}
+      <Card className="flex flex-col gap-3">
+        <div>
+          <p className="text-sm font-medium text-text">{t('settings.testData')}</p>
+          <p className="mt-1 text-sm text-muted">{t('settings.testDataHint')}</p>
+        </div>
+        <Toggle label={t('settings.testDataToggle')} checked={testData} onChange={toggleTestData} />
       </Card>
 
       <div className="flex items-center justify-between">

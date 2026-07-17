@@ -231,7 +231,10 @@
     "sizeM": "Medium",
     "sizeL": "Large",
     "privacy": "Privacy",
-    "privacyHint": "Choose what non-essential processing you allow. You can change this any time; withdrawing consent stops the related scripts and marketing email."
+    "privacyHint": "Choose what non-essential processing you allow. You can change this any time; withdrawing consent stops the related scripts and marketing email.",
+    "testData": "Test data",
+    "testDataHint": "Fills the stats and dashboard with generated per-activity detail derived from the real weekly totals (the totals stay the same). For testing only.",
+    "testDataToggle": "Show generated test data"
   },
   "consent": {
     "title": "Your privacy",
