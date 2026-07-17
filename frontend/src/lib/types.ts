@@ -24,6 +24,8 @@ export interface CurrentUser {
   coefficient: number // 1.0 or 1.25 (fenčí koeficient), shown in point previews
   languagePref: Lang
   themePref: ThemePref
+  analyticsConsent: boolean // account-level GDPR consent (per-browser choice is client-side)
+  marketingConsent: boolean
 }
 
 export interface DashboardData {

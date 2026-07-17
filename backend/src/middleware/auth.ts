@@ -90,6 +90,32 @@ export function requireAuth(deps: AuthDeps = defaultDeps): RequestHandler {
   }
 }
 
+/**
+ * Opportunistic auth for PUBLIC routes: if a valid Supabase JWT resolving to a
+ * member is present, attach `req.member`; otherwise continue anonymously. Never
+ * rejects — used by routes that serve both logged-in and anonymous callers
+ * (e.g. the consent endpoint, which records a member_id only when one is known).
+ */
+export function optionalAuth(deps: AuthDeps = defaultDeps): RequestHandler {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    const token = readBearer(req)
+    if (!token) {
+      next()
+      return
+    }
+    try {
+      const verified = await deps.verifyToken(token)
+      if (verified) {
+        const member = await deps.getMember(verified.userId)
+        if (member) req.member = member
+      }
+    } catch {
+      // Ignore — treat as anonymous.
+    }
+    next()
+  }
+}
+
 /** Guard: require the authenticated member to be an admin. Runs after requireAuth. */
 export const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req.member) {

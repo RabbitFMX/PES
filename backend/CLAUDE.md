@@ -71,6 +71,9 @@ gitignored `.env`):
   scripts (Supabase → Project Settings → Database; or any Postgres URL locally)
 - `SIGNUP_INVITE_CODE` — shared code that gates public self-signup
   (`POST /api/signup`). Unset ⇒ self-signup is disabled (fails closed)
+- `CONSENT_IP_SALT` — secret salt for hashing client IPs in the GDPR consent
+  log (`POST /api/consent`). Only the hash is stored (data minimisation), never
+  the raw IP. A non-secret dev default is used if unset — set a real value in prod.
 - `ANTHROPIC_API_KEY` — present but unused until seminar 6
 
 ## API structure
@@ -103,7 +106,10 @@ The client logs in with Supabase Auth (email+password) and sends the JWT as
   middleware without a live Supabase (mock `verifyToken`).
 
 Public routes (e.g. `/api/health`) are mounted directly; everything else goes
-through `mountProtected`.
+through `mountProtected`. `optionalAuth()` is a non-rejecting variant for routes
+that serve both anonymous and logged-in callers (the consent endpoint): it
+attaches `req.member` when a valid token is present and otherwise continues.
+`createApp` sets `trust proxy` so `req.ip` reflects the real client behind Traefik.
 
 **Planned endpoints** (built across the later chunks; ticked = live):
 
@@ -112,7 +118,14 @@ through `mountProtected`.
   creates the Supabase Auth user (password, email pre-confirmed) + a `member`
   row (role `member`, division B). The only path that provisions a member
   without an admin; `requireAuth` stays invite-only. ✅
-- `GET /api/me` — the current member's profile ✅ (chunk 4)
+- `POST /api/consent` — **public** (opportunistic auth) GDPR consent write.
+  Records one immutable `consent_log` row per category (analytics/marketing) with
+  the member (if signed in), a **hashed** IP, timestamp, category, granted flag,
+  and the policy version+hash; for a signed-in member it also updates the
+  `member.{analytics,marketing}_consent` flags. Backs the cookie banner and the
+  profile Privacy toggles. ✅
+- `GET /api/me` — the current member's profile (now includes
+  `analyticsConsent`/`marketingConsent`) ✅ (chunk 4)
 - `PATCH /api/me` — the member updates their OWN name / avatar / language / theme
   (self-only; avatar carries a `dog:<style>:<color>:<size>` token or a URL) ✅
 - `GET /api/members` — members directory (view-others), ranked by lifetime points ✅
@@ -152,12 +165,16 @@ which makes `log_entry.activity_id` nullable for quick-add entries, then
 `20260715130000_round_upcoming_status.sql` which lets `round.status` be
 `upcoming` (admin creates the next round before it opens), then
 `20260715140000_set_challenge_rotation_fn.sql` which adds an atomic
-`set_challenge_rotation(uuid[])` function for the rotation PUT) and
-reference data in `../supabase/seed.sql`;
+`set_challenge_rotation(uuid[])` function for the rotation PUT), then
+`20260716120000_history_import_support.sql` (historical import + `member_round_bank`),
+then `20260717120000_gdpr_consent.sql` (GDPR consent: `analytics_consent` /
+`marketing_consent` columns on `member`, both default false, plus the
+`consent_log` audit table) and reference data in `../supabase/seed.sql`;
 apply both with `npm run db:migrate && npm run db:seed`. **Keep this section in
 sync as new migrations land.** Tables are snake_case
 (`member`, `activity`, `round`, `week`, `log_entry`, `challenge`,
-`challenge_submission`, `challenge_rotation`, `member_round_division`).
+`challenge_submission`, `challenge_rotation`, `member_round_division`,
+`member_round_bank`, `consent_log`).
 
 Key modeling decisions:
 
@@ -210,6 +227,15 @@ Entities:
   challenge (`member_id`, `order_position`).
 - **MemberRoundDivision** — which division a member was in for a given past
   round, so "best round finish" reflects their division at the time.
+- **ConsentLog** — immutable GDPR consent audit trail (`services/consent.ts`,
+  `db/consent.ts`): one append-only row per category decision (grant OR
+  withdrawal) with `member_id` (nullable — anonymous pre-login is allowed),
+  `ip_hash` (sha256 of IP + `CONSENT_IP_SALT`; the raw IP is never stored),
+  `consent_type`, `granted`, `policy_version`, `policy_hash`, `user_agent`,
+  `created_at`. The member's _current_ consent is denormalised onto
+  `member.{analytics,marketing}_consent` so processing can be gated cheaply —
+  e.g. `weeklyNudgeRecipients` in `services/notifications.ts` drops members
+  without marketing consent, so consent gates email sending, not just scripts.
 
 Divisions, standings, promotion/relegation, dropped-worst-3 and the PSA-držák
 bonus are **computed at query time in `src/services`**, not stored as columns.

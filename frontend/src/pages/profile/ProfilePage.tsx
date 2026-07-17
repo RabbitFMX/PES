@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/auth'
+import { useConsent } from '../../context/consent'
 import { useTheme } from '../../context/theme'
 import { useToast } from '../../context/toast'
 import { updateProfile } from '../../lib/api'
@@ -22,11 +23,13 @@ import { Card } from '../../components/ui/Card'
 import { Button, ButtonLink } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
+import { Toggle } from '../../components/ui/Toggle'
 import { DogAvatar } from '../../components/DogAvatar'
 
 export function ProfilePage() {
   const { t, i18n } = useTranslation()
   const { user, updateUser, logout } = useAuth()
+  const { consent, updateCategory } = useConsent()
   const { theme, setTheme } = useTheme()
   const { showToast } = useToast()
   const navigate = useNavigate()
@@ -183,6 +186,26 @@ export function ProfilePage() {
             ]}
           />
         </div>
+      </Card>
+
+      {/* Privacy — withdraw/grant non-essential consent (GDPR). Toggling here
+          both gates the scripts on this device and updates the account consent
+          (which gates marketing email server-side). */}
+      <Card className="flex flex-col gap-4">
+        <div>
+          <p className="text-sm font-medium text-text">{t('settings.privacy')}</p>
+          <p className="mt-1 text-sm text-muted">{t('settings.privacyHint')}</p>
+        </div>
+        <Toggle
+          label={t('consent.analytics')}
+          checked={consent.analytics}
+          onChange={(v) => updateCategory('analytics', v)}
+        />
+        <Toggle
+          label={t('consent.marketing')}
+          checked={consent.marketing}
+          onChange={(v) => updateCategory('marketing', v)}
+        />
       </Card>
 
       <div className="flex items-center justify-between">

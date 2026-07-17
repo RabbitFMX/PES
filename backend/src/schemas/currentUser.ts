@@ -15,6 +15,9 @@ export const currentUserSchema = z.object({
   coefficient: z.number(),
   languagePref: z.enum(['cs', 'en']),
   themePref: z.enum(['light', 'dark']),
+  // Current GDPR consent (account-level; the per-browser choice lives client-side).
+  analyticsConsent: z.boolean(),
+  marketingConsent: z.boolean(),
 })
 
 export type CurrentUser = z.infer<typeof currentUserSchema>
@@ -49,5 +52,8 @@ export function toCurrentUser(member: MemberRow): CurrentUser {
     coefficient: Number(member.coefficient),
     languagePref: member.language_pref,
     themePref: member.theme_pref,
+    // Consent columns default to false in the DB; absent ⇒ no consent given.
+    analyticsConsent: member.analytics_consent ?? false,
+    marketingConsent: member.marketing_consent ?? false,
   })
 }

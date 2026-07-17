@@ -229,7 +229,20 @@
     "avatarSize": "Size",
     "sizeS": "Small",
     "sizeM": "Medium",
-    "sizeL": "Large"
+    "sizeL": "Large",
+    "privacy": "Privacy",
+    "privacyHint": "Choose what non-essential processing you allow. You can change this any time; withdrawing consent stops the related scripts and marketing email."
+  },
+  "consent": {
+    "title": "Your privacy",
+    "body": "PES uses only essential cookies by default. With your consent we may also use analytics and marketing cookies. You can change or withdraw this any time in Profile → Privacy.",
+    "essential": "Essential (always on)",
+    "analytics": "Analytics",
+    "marketing": "Marketing",
+    "acceptAll": "Accept all",
+    "rejectAll": "Reject non-essential",
+    "customise": "Customise",
+    "savePreferences": "Save choices"
   },
   "overview": {
     "pts": "pts",

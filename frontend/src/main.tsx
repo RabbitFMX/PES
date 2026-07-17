@@ -7,15 +7,21 @@ import App from './App.tsx'
 import { ThemeProvider } from './context/ThemeProvider'
 import { AuthProvider } from './context/AuthProvider'
 import { ToastProvider } from './context/ToastProvider'
+import { ConsentProvider } from './context/ConsentProvider'
+import { ConsentBanner } from './components/ConsentBanner'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <AuthProvider>
         <ToastProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <ConsentProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+            {/* Fixed overlay — shown until a consent choice is made, on any screen. */}
+            <ConsentBanner />
+          </ConsentProvider>
         </ToastProvider>
       </AuthProvider>
     </ThemeProvider>

@@ -210,3 +210,23 @@ export async function updateMemberProfile(
   if (error) throw error
   return (data as MemberRow | null) ?? null
 }
+
+/** Current GDPR consent flags a member may grant/withdraw for themselves. */
+export interface MemberConsentUpdate {
+  analytics_consent?: boolean
+  marketing_consent?: boolean
+}
+
+/**
+ * Update a member's current consent flags. The immutable audit trail lives in
+ * `consent_log` (db/consent.ts); this only reflects the LATEST state so the
+ * backend can gate non-essential processing (e.g. marketing email) cheaply.
+ */
+export async function updateMemberConsent(
+  id: string,
+  patch: MemberConsentUpdate,
+  client: Supabase = supabase,
+): Promise<void> {
+  const { error } = await client.from('member').update(patch).eq('id', id)
+  if (error) throw error
+}

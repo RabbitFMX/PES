@@ -63,9 +63,11 @@ src/
 │   ├── types.ts          # shared UI-facing types (the data shapes screens render)
 │   ├── mockPoints.ts     # points calc used only by the deferred NL-parse mock (brief §13/§14)
 │   ├── useAsync.ts       # loading/error/reload hook every data screen uses
+│   ├── consent.ts        # GDPR consent: per-browser storage + policy version/hash (fnv1a)
+│   ├── analytics.ts, marketing.ts  # non-essential script SEAMS — init/teardown only, gated by consent
 │   ├── format.ts, cn.ts  # pure helpers
 ├── context/              # providers, split into hook (.ts) + provider (.tsx):
-│   │                       #   theme, auth, toast, logActivity
+│   │                       #   theme, auth, toast, logActivity, consent
 ├── components/
 │   ├── ui/               # DESIGN SYSTEM: reusable primitives (Button, Input,
 │   │                       #   Modal, Card, Badge, ProgressRing, Tabs, Toast…)
@@ -77,6 +79,15 @@ src/
 └── test/setup.ts         # jest-dom matchers
 ```
 
+- **GDPR consent:** `ConsentProvider` (mounted in `main.tsx`) holds the
+  per-browser decision (localStorage, `lib/consent.ts`) and is the ONLY place
+  non-essential integrations start/stop — it calls `initAnalytics`/`initMarketing`
+  (and their teardowns) so those scripts never load without consent. The
+  `ConsentBanner` (no pre-ticked boxes) captures the first decision; Profile →
+  Privacy withdraws/grants later. Every decision is POSTed to `/api/consent`
+  (`recordConsent` in `lib/api.ts`) for the server audit log. To wire a real
+  analytics/marketing vendor, fill in `lib/analytics.ts` / `lib/marketing.ts` —
+  the consent gate already wraps them.
 - **Design system lives in two places only:** `styles/theme.css` (tokens) and
   `components/ui/` (primitives). Screens compose these; they do not invent
   styles.
