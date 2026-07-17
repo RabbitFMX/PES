@@ -38,7 +38,30 @@ export interface MemberRow {
   /** True for spreadsheet-imported members with no login yet. Column has a DB
    *  default (false), so it is optional in constructed rows. */
   is_historical?: boolean
+  /** Current per-account GDPR consent. Both columns have a DB default (false),
+   *  so they are optional in constructed rows; absent ⇒ no consent given. */
+  analytics_consent?: boolean
+  marketing_consent?: boolean
 }
+
+/**
+ * An immutable consent-audit row (one per category decision). Mirrors the
+ * `consent_log` table added in 20260717120000_gdpr_consent.sql.
+ */
+export interface ConsentLogRow {
+  id: string
+  member_id: string | null // null for an anonymous (pre-login) decision
+  ip_hash: string | null // sha256(ip + salt); never the raw IP
+  consent_type: 'essential' | 'analytics' | 'marketing'
+  granted: boolean
+  policy_version: string
+  policy_hash: string
+  user_agent: string | null
+  created_at: string
+}
+
+/** Columns supplied when appending a consent-log row (DB fills id/created_at). */
+export type NewConsentLog = Omit<ConsentLogRow, 'id' | 'created_at'>
 
 export interface RoundRow {
   id: string

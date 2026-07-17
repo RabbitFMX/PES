@@ -61,6 +61,21 @@ export function signup(input: {
   return apiClient.post<ApiResult>('/signup', input)
 }
 
+/* ---- GDPR consent ---- */
+
+/**
+ * Record a consent decision in the server audit log (cookie banner or a profile
+ * Privacy withdrawal). Public endpoint: works anonymously; if the user is signed
+ * in, `apiClient` attaches their token so the row + account flags are linked.
+ */
+export function recordConsent(input: {
+  consents: { analytics?: boolean; marketing?: boolean }
+  policyVersion: string
+  policyHash: string
+}): Promise<ApiResult> {
+  return apiClient.post<ApiResult>('/consent', input)
+}
+
 /* ---- Dashboard ---- */
 
 export function getDashboard(): Promise<DashboardData> {

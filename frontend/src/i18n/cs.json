@@ -229,7 +229,20 @@
     "avatarSize": "Velikost",
     "sizeS": "Malý",
     "sizeM": "Střední",
-    "sizeL": "Velký"
+    "sizeL": "Velký",
+    "privacy": "Soukromí",
+    "privacyHint": "Vyber, jaké nezbytné zpracování povolíš. Můžeš to kdykoli změnit; odvolání souhlasu zastaví příslušné skripty i marketingové e-maily."
+  },
+  "consent": {
+    "title": "Tvé soukromí",
+    "body": "PES ve výchozím stavu používá jen nezbytné cookies. S tvým souhlasem můžeme používat i analytické a marketingové cookies. Souhlas můžeš kdykoli změnit nebo odvolat v Profil → Soukromí.",
+    "essential": "Nezbytné (vždy zapnuto)",
+    "analytics": "Analytika",
+    "marketing": "Marketing",
+    "acceptAll": "Přijmout vše",
+    "rejectAll": "Odmítnout nepodstatné",
+    "customise": "Nastavit",
+    "savePreferences": "Uložit volby"
   },
   "overview": {
     "pts": "b",

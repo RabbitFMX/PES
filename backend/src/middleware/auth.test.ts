@@ -77,6 +77,8 @@ describe('GET /api/me (requireAuth)', () => {
       coefficient: 1.25,
       languagePref: 'cs',
       themePref: 'light',
+      analyticsConsent: false,
+      marketingConsent: false,
     })
   })
 
