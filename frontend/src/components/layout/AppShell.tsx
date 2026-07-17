@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { LogActivityContext } from '../../context/logActivity'
 import { Logo } from '../Logo'
 import { ProfileMenu } from './ProfileMenu'
+import { TestDataToggle } from '../TestDataToggle'
 import { TopBar } from './TopBar'
 import { BottomTabBar } from './BottomTabBar'
 import { LogActivityModal } from '../../pages/log-activity/LogActivityModal'
@@ -22,7 +23,10 @@ export function AppShell() {
             <Logo />
             <span className="font-bold">PES</span>
           </span>
-          <ProfileMenu />
+          <div className="flex items-center gap-2">
+            <TestDataToggle />
+            <ProfileMenu />
+          </div>
         </header>
 
         <main className="mx-auto max-w-6xl px-4 pt-4 pb-28 lg:px-6 lg:pb-10">
