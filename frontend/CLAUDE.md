@@ -98,11 +98,12 @@ src/
 - **Activity icons:** `components/ActivityIcon.tsx` + mapping in
   `lib/activityIcon.ts` — one line-icon set for all 35 activities, used in the
   log picker, stats, overview and pie legend.
-- **Test-data toggle:** Profile has a "test data" switch (`lib/testData.ts`,
-  persisted in localStorage). When on, `apiClient` adds the `X-PES-Test-Data`
-  header and the backend serves generated per-activity detail (real weekly
-  totals preserved) so all stats/dashboard screens can be exercised. Toggling
-  reloads the page so every screen refetches.
+- **Test-data toggle:** the per-browser "test data" flag (`lib/testData.ts`,
+  localStorage). When on, `apiClient` adds the `X-PES-Test-Data` header and the
+  backend serves generated per-activity detail (real weekly totals preserved) so
+  all stats/dashboard screens can be exercised. A quick `TestDataToggle` sits on
+  the main bar (desktop TopBar + mobile header, accent when active); Profile has
+  the fuller switch too. Toggling reloads the page so every screen refetches.
 - **Design system lives in two places only:** `styles/theme.css` (tokens) and
   `components/ui/` (primitives). Screens compose these; they do not invent
   styles.

@@ -4,6 +4,7 @@ import { cn } from '../../lib/cn'
 import { Logo } from '../Logo'
 import { Button } from '../ui/Button'
 import { ProfileMenu } from './ProfileMenu'
+import { TestDataToggle } from '../TestDataToggle'
 
 const links = [
   { to: '/', key: 'nav.dashboard', end: true },
@@ -41,6 +42,7 @@ export function TopBar({ onLogActivity }: { onLogActivity: () => void }) {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3">
+          <TestDataToggle />
           <Button onClick={onLogActivity} leftIcon={<PlusIcon />}>
             {t('nav.logActivity')}
           </Button>
