@@ -12,7 +12,7 @@ export type ThemePref = 'light' | 'dark'
 export type LogMode = 'detailed' | 'quick-add' | 'natural'
 
 /** Generic write response so save-confirmation / failure-toast is uniform. */
-export type ApiResult = { ok: true } | { ok: false; message: string }
+export type ApiResult = { ok: true; warning?: string } | { ok: false; message: string }
 
 export interface CurrentUser {
   id: string

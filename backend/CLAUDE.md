@@ -170,7 +170,7 @@ attaches `req.member` when a valid token is present and otherwise continues.
   (validation failures included, so the frontend toasts them without a throw);
   the whole admin router is mounted once behind `requireAdmin`.
   - members: `GET /api/admin/members`, `POST /api/admin/members/invite`, `PATCH /api/admin/members/:id`, `POST /api/admin/members/merge` (fold a historical member into a real account)
-  - activities: `GET /api/admin/activities`, `POST /api/admin/activities`, `PATCH /api/admin/activities/:id`
+  - activities: `GET /api/admin/activities`, `POST /api/admin/activities`, `PATCH /api/admin/activities/:id`, `DELETE /api/admin/activities/:id` (hard delete; refused with `in_use` when the activity already has log entries — the `log_entry.activity_id` FK is `on delete restrict`; deactivate via `active=false` instead)
   - rounds: `GET /api/admin/rounds`, `POST /api/admin/rounds`, `PATCH /api/admin/rounds/:id`
   - challenge rotation: `GET /api/admin/rotation`, `PUT /api/admin/rotation`
 

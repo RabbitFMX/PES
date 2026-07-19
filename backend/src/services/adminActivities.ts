@@ -1,4 +1,11 @@
-import { insertActivity, listAllActivities, updateActivity } from '../db/activities'
+import {
+  countActivityLogEntries,
+  deleteActivity as deleteActivityRow,
+  getActivity,
+  insertActivity,
+  listAllActivities,
+  updateActivity,
+} from '../db/activities'
 import type { ActivityRow } from '../db/types'
 import { toActivity, type Activity } from '../schemas/activity'
 import type { ActivityCreateInput, ActivityPatchInput, AdminResult } from '../schemas/admin'
@@ -68,4 +75,21 @@ export async function editActivity(id: string, patch: ActivityPatchInput): Promi
 
   const updated = await updateActivity(id, update)
   return updated ? { ok: true } : { ok: false, message: 'Activity not found.' }
+}
+
+/**
+ * DELETE /api/admin/activities/:id — hard-delete a rate-table row. Refused for
+ * activities that already have log entries (a `log_entry.activity_id` FK is
+ * `on delete restrict`); the admin should deactivate those instead. Returns a
+ * sentinel message the frontend localises (`in_use` / `not_found`).
+ */
+export async function deleteActivity(id: string): Promise<AdminResult> {
+  const existing = await getActivity(id)
+  if (!existing) return { ok: false, message: 'not_found' }
+
+  const uses = await countActivityLogEntries(id)
+  if (uses > 0) return { ok: false, message: 'in_use' }
+
+  await deleteActivityRow(id)
+  return { ok: true }
 }

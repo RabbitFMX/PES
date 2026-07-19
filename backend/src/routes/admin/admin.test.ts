@@ -18,6 +18,9 @@ const deleteMember = vi.hoisted(() => vi.fn())
 const listAllActivities = vi.hoisted(() => vi.fn())
 const insertActivity = vi.hoisted(() => vi.fn())
 const updateActivity = vi.hoisted(() => vi.fn())
+const getActivity = vi.hoisted(() => vi.fn())
+const countActivityLogEntries = vi.hoisted(() => vi.fn())
+const deleteActivity = vi.hoisted(() => vi.fn())
 const listRounds = vi.hoisted(() => vi.fn())
 const insertRound = vi.hoisted(() => vi.fn())
 const updateRound = vi.hoisted(() => vi.fn())
@@ -34,7 +37,14 @@ vi.mock('../../db/members', () => ({
   reassignMemberChildRecords,
   deleteMember,
 }))
-vi.mock('../../db/activities', () => ({ listAllActivities, insertActivity, updateActivity }))
+vi.mock('../../db/activities', () => ({
+  listAllActivities,
+  insertActivity,
+  updateActivity,
+  getActivity,
+  countActivityLogEntries,
+  deleteActivity,
+}))
 vi.mock('../../db/rounds', () => ({ listRounds, insertRound, updateRound }))
 vi.mock('../../db/rotation', () => ({ getRotation, putRotation }))
 
@@ -283,6 +293,45 @@ describe('Admin activities', () => {
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ ok: true })
     expect(updateActivity).toHaveBeenCalledWith('run', { active: false, points_per_unit: 4 })
+  })
+
+  it('deletes an unused activity', async () => {
+    getActivity.mockResolvedValue(activityRow)
+    countActivityLogEntries.mockResolvedValue(0)
+    deleteActivity.mockResolvedValue(undefined)
+    const res = await request(buildApp(admin))
+      .delete('/api/admin/activities/run')
+      .set('Authorization', 'Bearer valid')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ ok: true })
+    expect(deleteActivity).toHaveBeenCalledWith('run')
+  })
+
+  it('refuses to delete an activity that has log entries (in_use)', async () => {
+    getActivity.mockResolvedValue(activityRow)
+    countActivityLogEntries.mockResolvedValue(7)
+    const res = await request(buildApp(admin))
+      .delete('/api/admin/activities/run')
+      .set('Authorization', 'Bearer valid')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ ok: false, message: 'in_use' })
+    expect(deleteActivity).not.toHaveBeenCalled()
+  })
+
+  it('404-style not_found for deleting a missing activity', async () => {
+    getActivity.mockResolvedValue(null)
+    const res = await request(buildApp(admin))
+      .delete('/api/admin/activities/nope')
+      .set('Authorization', 'Bearer valid')
+    expect(res.body).toEqual({ ok: false, message: 'not_found' })
+    expect(deleteActivity).not.toHaveBeenCalled()
+  })
+
+  it('rejects a member (non-admin) deleting an activity', async () => {
+    const res = await request(buildApp(member('m-1', 'member')))
+      .delete('/api/admin/activities/run')
+      .set('Authorization', 'Bearer valid')
+    expect(res.status).toBe(403)
   })
 })
 

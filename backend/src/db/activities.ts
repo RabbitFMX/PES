@@ -53,6 +53,26 @@ export async function insertActivity(
   return data as ActivityRow
 }
 
+/** How many log entries reference this activity (blocks a hard delete when > 0). */
+export async function countActivityLogEntries(
+  id: string,
+  client: Supabase = supabase,
+): Promise<number> {
+  const { count, error } = await client
+    .from('log_entry')
+    .select('id', { count: 'exact', head: true })
+    .eq('activity_id', id)
+
+  if (error) throw error
+  return count ?? 0
+}
+
+/** Hard-delete an activity row by id. FK-safe only when it has no log entries. */
+export async function deleteActivity(id: string, client: Supabase = supabase): Promise<void> {
+  const { error } = await client.from('activity').delete().eq('id', id)
+  if (error) throw error
+}
+
 /** Update an activity by id; returns the updated row (null if no such id). */
 export async function updateActivity(
   id: string,

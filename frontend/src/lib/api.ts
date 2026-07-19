@@ -275,6 +275,31 @@ export function saveActivity(activity: Activity): Promise<ApiResult> {
   })
 }
 
+/** Create a new rate-table activity (admin). `id` is the text slug. */
+export function createActivity(activity: Activity): Promise<ApiResult> {
+  return apiClient.post<ApiResult>('/admin/activities', {
+    id: activity.id,
+    nameCs: activity.nameCs,
+    nameEn: activity.nameEn,
+    unit: activity.unit,
+    pointsPerUnit: activity.pointsPerUnit,
+    hasElevationBonus: activity.hasElevationBonus,
+    elevationBonusPer50m: activity.elevationBonusPer50m,
+    elevationBonusPer50mStroller: activity.elevationBonusPer50mStroller,
+    hasStrollerOption: activity.hasStrollerOption,
+    strollerBaseRateOverride: activity.strollerBaseRateOverride,
+    isTiered: activity.isTiered,
+    tierOptions: activity.tierOptions,
+    notes: activity.notes,
+    active: activity.active,
+  })
+}
+
+/** Delete a rate-table activity (admin). Refused server-side if it has entries. */
+export function deleteActivity(id: string): Promise<ApiResult> {
+  return apiClient.delete<ApiResult>(`/admin/activities/${id}`)
+}
+
 export function getRounds(): Promise<Round[]> {
   return apiClient.get<Round[]>('/admin/rounds')
 }
