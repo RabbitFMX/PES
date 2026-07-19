@@ -14,10 +14,13 @@ const listRounds = vi.hoisted(() => vi.fn())
 const listWeeks = vi.hoisted(() => vi.fn())
 const getCurrentWeek = vi.hoisted(() => vi.fn())
 
+const listWeekChallengeBonus = vi.hoisted(() => vi.fn(async () => []))
+
 vi.mock('../db/members', () => ({ getMemberById, listAllMembers }))
 vi.mock('../db/logEntries', () => ({ listMemberEntriesDetailed, listRoundEntries }))
 vi.mock('../db/rounds', () => ({ listRounds }))
 vi.mock('../db/weeks', () => ({ listWeeks, getCurrentWeek }))
+vi.mock('../db/challenges', () => ({ listWeekChallengeBonus }))
 
 function member(id: string, over: Partial<MemberRow> = {}): MemberRow {
   return {

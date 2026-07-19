@@ -109,6 +109,9 @@ export interface ChallengeRow {
   status: 'open' | 'closed'
   created_at: string
   bonus_split: number[] | null // custom placement points; null → default 30/20/10
+  /** How the challenge is scored (migration 20260719120000; DB default
+   *  'competitive', so optional in constructed rows). */
+  scoring_mode?: 'competitive' | 'completion'
 }
 
 export interface ChallengeSubmissionRow {

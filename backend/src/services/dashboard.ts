@@ -1,4 +1,8 @@
-import { getChallengeForWeek, hasSubmittedToChallenge } from '../db/challenges'
+import {
+  getChallengeForWeek,
+  hasSubmittedToChallenge,
+  listWeekChallengeBonus,
+} from '../db/challenges'
 import { listRoundEntries } from '../db/logEntries'
 import { listActiveMembers } from '../db/members'
 import { getMemberRoundDivisions, getOpenRound } from '../db/rounds'
@@ -64,7 +68,10 @@ export async function getDashboard(member: MemberRow): Promise<DashboardData> {
 
   const weeks = await listWeeksByRound(round.id)
   const weekIds = weeks.map((w) => w.id)
-  const entries = await listRoundEntries(weekIds)
+  const [entries, bonus] = await Promise.all([
+    listRoundEntries(weekIds),
+    listWeekChallengeBonus(weekIds),
+  ])
 
   // Per-member round totals, and this member's per-week totals in one pass.
   const roundTotalByMember = new Map<string, number>()
@@ -73,6 +80,14 @@ export async function getDashboard(member: MemberRow): Promise<DashboardData> {
     roundTotalByMember.set(e.member_id, (roundTotalByMember.get(e.member_id) ?? 0) + e.final_points)
     if (e.member_id === member.id) {
       memberPointsByWeek.set(e.week_id, (memberPointsByWeek.get(e.week_id) ?? 0) + e.final_points)
+    }
+  }
+  // Challenge bonus counts into round totals (all members, for pack rank) and
+  // this member's weekly totals (goal, streak).
+  for (const b of bonus) {
+    roundTotalByMember.set(b.member_id, (roundTotalByMember.get(b.member_id) ?? 0) + b.bonus_points)
+    if (b.member_id === member.id) {
+      memberPointsByWeek.set(b.week_id, (memberPointsByWeek.get(b.week_id) ?? 0) + b.bonus_points)
     }
   }
 

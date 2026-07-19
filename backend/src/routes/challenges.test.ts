@@ -17,6 +17,7 @@ const upsertSubmission = vi.hoisted(() => vi.fn())
 const setSubmissionScores = vi.hoisted(() => vi.fn())
 const listClosedChallenges = vi.hoisted(() => vi.fn())
 const getRotation = vi.hoisted(() => vi.fn())
+const getMemberById = vi.hoisted(() => vi.fn())
 
 vi.mock('../db/weeks', () => ({ getCurrentWeek }))
 vi.mock('../db/challenges', () => ({
@@ -30,6 +31,7 @@ vi.mock('../db/challenges', () => ({
   listClosedChallenges,
 }))
 vi.mock('../db/rotation', () => ({ getRotation }))
+vi.mock('../db/members', () => ({ getMemberById }))
 
 function member(id: string): MemberRow {
   return {
@@ -97,6 +99,7 @@ describe('Challenges API', () => {
     countChallenges.mockResolvedValue(0)
     listSubmissions.mockResolvedValue([])
     listClosedChallenges.mockResolvedValue([])
+    getMemberById.mockImplementation(async (id: string) => member(id))
   })
 
   it('401s without a token', async () => {
@@ -205,11 +208,59 @@ describe('Challenges API', () => {
     ])
   })
 
+  it('surfaces the current setter name to everyone when no challenge is set', async () => {
+    // `me` is up first (rotation [me, m2], 0 challenges). Name comes from getMemberById.
+    getMemberById.mockImplementation(async (id: string) => ({ ...member(id), name: `Name-${id}` }))
+    const res = await request(buildApp())
+      .get('/api/challenges/current')
+      .set('Authorization', 'Bearer valid')
+
+    expect(res.status).toBe(200)
+    expect(res.body.setterMemberId).toBe('me')
+    expect(res.body.setterName).toBe('Name-me')
+    expect(res.body.scoringMode).toBe('competitive')
+  })
+
+  it('creates a completion-scored challenge and shows awarded points (no value)', async () => {
+    getChallengeForWeek.mockResolvedValue({
+      ...challenge,
+      scoring_mode: 'completion',
+    })
+    listSubmissions.mockResolvedValue([
+      { memberId: 'm2', displayName: 'Ondra', value: null, rank: null, bonusPoints: 30 },
+      { memberId: 'me', displayName: 'Bára', value: null, rank: null, bonusPoints: 10 },
+    ])
+
+    const res = await request(buildApp())
+      .get('/api/challenges/current')
+      .set('Authorization', 'Bearer valid')
+
+    expect(res.status).toBe(200)
+    expect(res.body.scoringMode).toBe('completion')
+    // Highest award first; value is null for completion challenges.
+    expect(res.body.submissions).toEqual([
+      { memberId: 'm2', displayName: 'Ondra', value: null, rank: null, bonusPoints: 30 },
+      { memberId: 'me', displayName: 'Bára', value: null, rank: null, bonusPoints: 10 },
+    ])
+  })
+
+  it('rejects submitting a value to a completion challenge (409)', async () => {
+    getChallengeById.mockResolvedValue({ ...challenge, scoring_mode: 'completion' })
+    const res = await request(buildApp())
+      .post('/api/challenges/ch-1/submissions')
+      .set('Authorization', 'Bearer valid')
+      .send({ value: 10 })
+    expect(res.status).toBe(409)
+    expect(res.body.error).toBe('not_competitive')
+    expect(upsertSubmission).not.toHaveBeenCalled()
+  })
+
   it('returns past challenges with the winner and week label', async () => {
     listClosedChallenges.mockResolvedValue([{ id: 'ch-0', title: 'Nejdelší běh', weekNumber: 6 }])
+    // Winner is derived from the persisted bonus_points (works for both modes).
     listSubmissions.mockResolvedValue([
-      { memberId: 'm2', displayName: 'Ondra Dvořák', value: 21 },
-      { memberId: 'me', displayName: 'Bára Nováková', value: 12 },
+      { memberId: 'm2', displayName: 'Ondra Dvořák', value: 21, rank: 1, bonusPoints: 30 },
+      { memberId: 'me', displayName: 'Bára Nováková', value: 12, rank: 2, bonusPoints: 20 },
     ])
 
     const res = await request(buildApp())

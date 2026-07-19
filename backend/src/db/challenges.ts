@@ -8,7 +8,7 @@ import type { ChallengeRow } from './types'
  */
 
 const CHALLENGE_COLS =
-  'id, week_id, setter_member_id, title, description, deadline, status, created_at, bonus_split'
+  'id, week_id, setter_member_id, title, description, deadline, status, created_at, bonus_split, scoring_mode'
 
 /** This week's challenge (most recent for the week), or null if none is set. */
 export async function getChallengeForWeek(
@@ -60,6 +60,7 @@ export interface NewChallenge {
   description: string | null
   deadline: string | null
   bonus_split: number[] | null
+  scoring_mode: 'competitive' | 'completion'
 }
 
 /** Insert a challenge and return the saved row. */
@@ -78,26 +79,83 @@ export interface SubmissionWithMember {
   memberId: string
   displayName: string
   value: number | null
+  rank: number | null
+  bonusPoints: number
 }
 
-/** All submissions for a challenge with the member's display name. */
+/** All submissions for a challenge with the member's display name + score. */
 export async function listSubmissions(
   challengeId: string,
   client: Supabase = supabase,
 ): Promise<SubmissionWithMember[]> {
   const { data, error } = await client
     .from('challenge_submission')
-    .select('member_id, value, member!inner(name)')
+    .select('member_id, value, rank, bonus_points, member!inner(name)')
     .eq('challenge_id', challengeId)
 
   if (error) throw error
 
-  type Row = { member_id: string; value: number | null; member: { name: string } }
+  type Row = {
+    member_id: string
+    value: number | null
+    rank: number | null
+    bonus_points: number | null
+    member: { name: string }
+  }
   return ((data ?? []) as unknown as Row[]).map((r) => ({
     memberId: r.member_id,
     displayName: r.member.name,
     value: r.value === null ? null : Number(r.value),
+    rank: r.rank === null ? null : Number(r.rank),
+    bonusPoints: r.bonus_points === null ? 0 : Number(r.bonus_points),
   }))
+}
+
+/**
+ * Sum of challenge bonus points per member across a set of weeks. Joins
+ * `challenge_submission` → `challenge` on `week_id`; used to fold challenge
+ * points into weekly + round totals (leaderboard / dashboard / overview).
+ */
+export async function listWeekChallengeBonus(
+  weekIds: string[],
+  client: Supabase = supabase,
+): Promise<{ member_id: string; week_id: string; bonus_points: number }[]> {
+  if (weekIds.length === 0) return []
+
+  const { data, error } = await client
+    .from('challenge_submission')
+    .select('member_id, bonus_points, challenge!inner(week_id)')
+    .in('challenge.week_id', weekIds)
+
+  if (error) throw error
+
+  type Row = { member_id: string; bonus_points: number | null; challenge: { week_id: string } }
+  return ((data ?? []) as unknown as Row[]).map((r) => ({
+    member_id: r.member_id,
+    week_id: r.challenge.week_id,
+    bonus_points: r.bonus_points === null ? 0 : Number(r.bonus_points),
+  }))
+}
+
+/**
+ * Award (upsert) completion bonus points for a member on a challenge. Used by
+ * the admin/setter completion-scoring path; creates the submission row if the
+ * member never submitted, and clears any competitive `rank`.
+ */
+export async function upsertBonusAward(
+  challengeId: string,
+  memberId: string,
+  points: number,
+  client: Supabase = supabase,
+): Promise<void> {
+  const { error } = await client
+    .from('challenge_submission')
+    .upsert(
+      { challenge_id: challengeId, member_id: memberId, bonus_points: points, rank: null },
+      { onConflict: 'challenge_id,member_id' },
+    )
+
+  if (error) throw error
 }
 
 /**

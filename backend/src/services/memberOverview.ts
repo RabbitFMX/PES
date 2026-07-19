@@ -1,4 +1,5 @@
 import { HttpError } from '../middleware/errorHandler'
+import { listWeekChallengeBonus } from '../db/challenges'
 import { getMemberById, listAllMembers } from '../db/members'
 import { listMemberEntriesDetailed, listRoundEntries } from '../db/logEntries'
 import type { MemberStatEntry } from '../db/logEntries'
@@ -69,11 +70,26 @@ export async function getMemberOverview(
   ])
   const nm = (e: MemberStatEntry) => nameFor(e, lang)
 
-  const lifetimePoints = round2(entries.reduce((s, e) => s + e.finalPoints, 0))
+  // This member's challenge bonus per week (folds into weekly + round totals so
+  // the ring/streak/records match the dashboard & leaderboard).
+  const weekToRound = new Map(weeks.map((w) => [w.id, w.round_id]))
+  const allBonus = await listWeekChallengeBonus(weeks.map((w) => w.id))
+  const bonusByWeek = new Map<string, number>()
+  for (const b of allBonus) {
+    if (b.member_id !== memberId) continue
+    bonusByWeek.set(b.week_id, (bonusByWeek.get(b.week_id) ?? 0) + b.bonus_points)
+  }
+  const bonusTotal = [...bonusByWeek.values()].reduce((s, p) => s + p, 0)
+
+  const lifetimePoints = round2(entries.reduce((s, e) => s + e.finalPoints, 0) + bonusTotal)
 
   // Per-round totals → round history (chronological, only rounds they played).
   const byRound = new Map<string, number>()
   for (const e of entries) byRound.set(e.roundId, (byRound.get(e.roundId) ?? 0) + e.finalPoints)
+  for (const [weekId, pts] of bonusByWeek) {
+    const roundId = weekToRound.get(weekId)
+    if (roundId) byRound.set(roundId, (byRound.get(roundId) ?? 0) + pts)
+  }
   const roundHistory = [...rounds]
     .sort((a, b) => a.start_date.localeCompare(b.start_date))
     .filter((r) => byRound.has(r.id))
@@ -82,11 +98,17 @@ export async function getMemberOverview(
   // Per-week totals (chronological) for records + streak.
   const weekTotal = new Map<string, number>()
   for (const e of entries) weekTotal.set(e.weekId, (weekTotal.get(e.weekId) ?? 0) + e.finalPoints)
+  for (const [weekId, pts] of bonusByWeek) {
+    weekTotal.set(weekId, (weekTotal.get(weekId) ?? 0) + pts)
+  }
   const chronoTotals = weeks.map((w) => weekTotal.get(w.id) ?? 0)
 
   // Current week snapshot + detailed activity list.
   const cw = currentWeek ? entries.filter((e) => e.weekId === currentWeek.id) : []
-  const weeklyPoints = round2(cw.reduce((s, e) => s + e.finalPoints, 0))
+  const weeklyPoints = round2(
+    cw.reduce((s, e) => s + e.finalPoints, 0) +
+      (currentWeek ? (bonusByWeek.get(currentWeek.id) ?? 0) : 0),
+  )
   let streakWeeks = 0
   if (currentWeek) {
     const past = weeks

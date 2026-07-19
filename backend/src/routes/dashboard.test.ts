@@ -15,12 +15,17 @@ const listRoundEntries = vi.hoisted(() => vi.fn())
 const listActiveMembers = vi.hoisted(() => vi.fn())
 const getChallengeForWeek = vi.hoisted(() => vi.fn())
 const hasSubmittedToChallenge = vi.hoisted(() => vi.fn())
+const listWeekChallengeBonus = vi.hoisted(() => vi.fn(async () => []))
 
 vi.mock('../db/rounds', () => ({ getOpenRound, getMemberRoundDivisions }))
 vi.mock('../db/weeks', () => ({ getCurrentWeek, listWeeksByRound }))
 vi.mock('../db/logEntries', () => ({ listRoundEntries }))
 vi.mock('../db/members', () => ({ listActiveMembers }))
-vi.mock('../db/challenges', () => ({ getChallengeForWeek, hasSubmittedToChallenge }))
+vi.mock('../db/challenges', () => ({
+  getChallengeForWeek,
+  hasSubmittedToChallenge,
+  listWeekChallengeBonus,
+}))
 
 function member(id: string, division: 'A' | 'B'): MemberRow {
   return {

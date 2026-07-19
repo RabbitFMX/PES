@@ -3,17 +3,20 @@ import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
 import { createChallenge, getChallenge, getPastChallenges, submitChallenge } from '../../lib/api'
 import { formatPoints } from '../../lib/format'
-import type { ChallengeData, PastChallenge } from '../../lib/types'
+import type { ChallengeData, PastChallenge, ScoringMode } from '../../lib/types'
 import { useToast } from '../../context/toast'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
+import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { Avatar } from '../../components/ui/Avatar'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorState } from '../../components/ui/ErrorState'
+
+const MAX_CHALLENGE_LEN = 1000
 
 export function ChallengesPage() {
   const { t } = useTranslation()
@@ -31,10 +34,23 @@ export function ChallengesPage() {
         </div>
       ) : error || !data ? (
         <ErrorState onRetry={reload} />
-      ) : data.id === null ? (
-        <NoChallenge isSetterTurn={data.isSetterTurn} onReload={reload} />
       ) : (
-        <ActiveChallenge data={data} onReload={reload} />
+        <>
+          {/* Always-visible "who sets this week's challenge" line. */}
+          {data.setterName && (
+            <p className="text-sm text-primary">
+              🐾{' '}
+              {data.isSetterTurn
+                ? t('challenges.yourTurnToSet')
+                : t('challenges.whoSets', { name: data.setterName })}
+            </p>
+          )}
+          {data.id === null ? (
+            <NoChallenge isSetterTurn={data.isSetterTurn} onReload={reload} />
+          ) : (
+            <ActiveChallenge data={data} onReload={reload} />
+          )}
+        </>
       )}
 
       {past.data && past.data.length > 0 && <PastList items={past.data} />}
@@ -61,7 +77,8 @@ function ActiveChallenge({ data, onReload }: { data: ChallengeData; onReload: ()
   const [value, setValue] = useState('')
   const [submitted, setSubmitted] = useState(data.hasSubmitted)
   const [busy, setBusy] = useState(false)
-  const daysLeft = daysUntil(data.deadline)
+  const isCompletion = data.scoringMode === 'completion'
+  const daysLeft = data.deadline ? daysUntil(data.deadline) : null
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -91,49 +108,72 @@ function ActiveChallenge({ data, onReload }: { data: ChallengeData; onReload: ()
         <Card>
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-lg font-semibold text-text">{data.title}</h2>
-            <Badge variant={daysLeft <= 1 ? 'accent' : 'neutral'}>
-              {t('challenges.deadline')}: {daysLeft}d
-            </Badge>
+            <div className="flex shrink-0 items-center gap-2">
+              <Badge variant="neutral">
+                {isCompletion ? t('challenges.modeCompletion') : t('challenges.modeCompetitive')}
+              </Badge>
+              {daysLeft !== null && (
+                <Badge variant={daysLeft <= 1 ? 'accent' : 'neutral'}>
+                  {t('challenges.deadline')}: {daysLeft}d
+                </Badge>
+              )}
+            </div>
           </div>
-          <p className="mt-2 text-sm text-muted">{data.description}</p>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{data.description}</p>
         </Card>
 
-        <Card>
-          {submitted ? (
-            <Badge variant="success">{t('challenges.submitted')}</Badge>
-          ) : (
-            <form onSubmit={submit} className="flex items-end gap-3">
-              <div className="flex-1">
-                <Input
-                  label={t('challenges.yourValue')}
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                />
-              </div>
-              <Button type="submit" loading={busy} disabled={!(Number(value) > 0)}>
-                {t('challenges.submit')}
-              </Button>
-            </form>
-          )}
-        </Card>
+        {/* Members submit a value only for competitive challenges. */}
+        {!isCompletion && (
+          <Card>
+            {submitted ? (
+              <Badge variant="success">{t('challenges.submitted')}</Badge>
+            ) : (
+              <form onSubmit={submit} className="flex items-end gap-3">
+                <div className="flex-1">
+                  <Input
+                    label={t('challenges.yourValue')}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" loading={busy} disabled={!(Number(value) > 0)}>
+                  {t('challenges.submit')}
+                </Button>
+              </form>
+            )}
+          </Card>
+        )}
+        {isCompletion && (
+          <Card>
+            <p className="text-sm text-muted">{t('challenges.completionHint')}</p>
+          </Card>
+        )}
       </div>
 
       <Card>
-        <h2 className="mb-3 text-lg font-semibold text-text">{t('challenges.submissions')}</h2>
-        <ul className="flex flex-col gap-2">
-          {data.submissions.map((s) => (
-            <li key={s.memberId} className="flex items-center gap-3">
-              <span className="w-5 text-center font-bold text-muted">{s.rank ?? '—'}</span>
-              <Avatar name={s.displayName} size="sm" />
-              <span className="flex-1 truncate text-text">{s.displayName}</span>
-              <span className="text-sm text-muted">{formatPoints(s.value)}</span>
-              {s.bonusPoints > 0 && <Badge variant="accent">+{s.bonusPoints}</Badge>}
-            </li>
-          ))}
-        </ul>
+        <h2 className="mb-3 text-lg font-semibold text-text">
+          {isCompletion ? t('challenges.awards') : t('challenges.submissions')}
+        </h2>
+        {data.submissions.length === 0 ? (
+          <EmptyState title={t('challenges.noSubmissions')} />
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {data.submissions.map((s) => (
+              <li key={s.memberId} className="flex items-center gap-3">
+                <span className="w-5 text-center font-bold text-muted">{s.rank ?? '—'}</span>
+                <Avatar name={s.displayName} size="sm" />
+                <span className="flex-1 truncate text-text">{s.displayName}</span>
+                {s.value !== null && (
+                  <span className="text-sm text-muted">{formatPoints(s.value)}</span>
+                )}
+                {s.bonusPoints > 0 && <Badge variant="accent">+{s.bonusPoints}</Badge>}
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </div>
   )
@@ -145,14 +185,20 @@ function SetChallengeForm({ onReload }: { onReload: () => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [scoringMode, setScoringMode] = useState<ScoringMode>('competitive')
   const [busy, setBusy] = useState(false)
 
   async function publish(e: FormEvent) {
     e.preventDefault()
-    if (!title.trim() || !deadline) return
+    if (!title.trim() || description.length > MAX_CHALLENGE_LEN) return
     setBusy(true)
     try {
-      const res = await createChallenge({ title, description, deadline })
+      const res = await createChallenge({
+        title,
+        description,
+        deadline: deadline ? new Date(deadline).toISOString() : null,
+        scoringMode,
+      })
       if (res.ok) {
         showToast({ message: t('challenges.published'), variant: 'success' })
         setTitle('')
@@ -167,6 +213,8 @@ function SetChallengeForm({ onReload }: { onReload: () => void }) {
     }
   }
 
+  const over = description.length > MAX_CHALLENGE_LEN
+
   return (
     <Card>
       <h2 className="mb-3 text-lg font-semibold text-text">{t('challenges.setChallenge')}</h2>
@@ -177,19 +225,44 @@ function SetChallengeForm({ onReload }: { onReload: () => void }) {
           onChange={(e) => setTitle(e.target.value)}
           required
         />
-        <Textarea
-          label={t('challenges.setDescription')}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+        <div>
+          <Textarea
+            label={t('challenges.setDescription')}
+            value={description}
+            maxLength={MAX_CHALLENGE_LEN}
+            rows={5}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <div className={`mt-1 text-right text-xs ${over ? 'text-danger' : 'text-muted'}`}>
+            {description.length} / {MAX_CHALLENGE_LEN}
+          </div>
+        </div>
+        <div>
+          <span className="mb-1 block text-sm font-medium text-text">
+            {t('challenges.scoringMode')}
+          </span>
+          <SegmentedControl
+            ariaLabel={t('challenges.scoringMode')}
+            value={scoringMode}
+            onChange={setScoringMode}
+            segments={[
+              { value: 'competitive', label: t('challenges.modeCompetitive') },
+              { value: 'completion', label: t('challenges.modeCompletion') },
+            ]}
+          />
+          <p className="mt-1 text-xs text-muted">
+            {scoringMode === 'competitive'
+              ? t('challenges.modeCompetitiveHint')
+              : t('challenges.modeCompletionHint')}
+          </p>
+        </div>
         <Input
-          label={t('challenges.setDeadline')}
+          label={`${t('challenges.setDeadline')} (${t('common.optional')})`}
           type="datetime-local"
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
-          required
         />
-        <Button type="submit" loading={busy} disabled={!title.trim() || !deadline}>
+        <Button type="submit" loading={busy} disabled={!title.trim() || over}>
           {t('challenges.publish')}
         </Button>
       </form>

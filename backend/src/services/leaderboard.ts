@@ -1,3 +1,4 @@
+import { listWeekChallengeBonus } from '../db/challenges'
 import { listRoundEntries } from '../db/logEntries'
 import { listActiveMembers } from '../db/members'
 import { getMemberRoundDivisions, getOpenRound } from '../db/rounds'
@@ -31,6 +32,8 @@ export interface LeaderboardMember {
 export interface BuildLeaderboardInput {
   members: LeaderboardMember[]
   roundEntries: { memberId: string; weekId: string; finalPoints: number }[]
+  /** Challenge bonus points per member per week (fold into weekly + round totals). */
+  challengeBonus?: { memberId: string; weekId: string; points: number }[]
   /** The current open week's id (null between weeks) for goal-met status. */
   currentWeekId: string | null
   /** The requester's id, to flag their row. */
@@ -43,7 +46,7 @@ function round2(n: number): number {
 
 /** Pure standings build: aggregate, filter to participants, rank, map to rows. */
 export function buildLeaderboard(input: BuildLeaderboardInput): LeaderboardData {
-  const { members, roundEntries, currentWeekId, currentUserId } = input
+  const { members, roundEntries, challengeBonus = [], currentWeekId, currentUserId } = input
 
   const roundTotalByMember = new Map<string, number>()
   const weekPointsByMember = new Map<string, number>()
@@ -51,6 +54,13 @@ export function buildLeaderboard(input: BuildLeaderboardInput): LeaderboardData 
     roundTotalByMember.set(e.memberId, (roundTotalByMember.get(e.memberId) ?? 0) + e.finalPoints)
     if (currentWeekId !== null && e.weekId === currentWeekId) {
       weekPointsByMember.set(e.memberId, (weekPointsByMember.get(e.memberId) ?? 0) + e.finalPoints)
+    }
+  }
+  // Challenge bonus counts into the round total and the current-week goal.
+  for (const b of challengeBonus) {
+    roundTotalByMember.set(b.memberId, (roundTotalByMember.get(b.memberId) ?? 0) + b.points)
+    if (currentWeekId !== null && b.weekId === currentWeekId) {
+      weekPointsByMember.set(b.memberId, (weekPointsByMember.get(b.memberId) ?? 0) + b.points)
     }
   }
 
@@ -87,10 +97,12 @@ export async function getLeaderboard(member: MemberRow): Promise<LeaderboardData
   if (!round) return leaderboardDataSchema.parse({ packA: [], packB: [] })
 
   const weeks = await listWeeksByRound(round.id)
-  const [entries, members, divisions] = await Promise.all([
-    listRoundEntries(weeks.map((w) => w.id)),
+  const weekIds = weeks.map((w) => w.id)
+  const [entries, members, divisions, bonus] = await Promise.all([
+    listRoundEntries(weekIds),
     listActiveMembers(),
     getMemberRoundDivisions(round.id),
+    listWeekChallengeBonus(weekIds),
   ])
 
   const divisionOf = new Map(divisions.map((d) => [d.member_id, d.division]))
@@ -107,6 +119,11 @@ export async function getLeaderboard(member: MemberRow): Promise<LeaderboardData
       memberId: e.member_id,
       weekId: e.week_id,
       finalPoints: e.final_points,
+    })),
+    challengeBonus: bonus.map((b) => ({
+      memberId: b.member_id,
+      weekId: b.week_id,
+      points: b.bonus_points,
     })),
     currentWeekId: week?.id ?? null,
     currentUserId: member.id,

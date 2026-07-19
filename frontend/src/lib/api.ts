@@ -9,9 +9,11 @@ import { apiClient } from './apiClient'
 import { applyCoefficient, computeRawPoints } from './mockPoints'
 import type {
   Activity,
+  AdminChallenge,
   ApiResult,
   ChallengeData,
   CurrentUser,
+  ScoringMode,
   DashboardData,
   Lang,
   DetailedLogInput,
@@ -222,12 +224,26 @@ export async function submitChallenge(value: number): Promise<ApiResult> {
 export function createChallenge(input: {
   title: string
   description: string
-  deadline: string
+  deadline?: string | null
+  scoringMode: ScoringMode
 }): Promise<ApiResult> {
   return apiClient.post<ApiResult>('/challenges', input)
 }
 
 /* ---- Admin ---- */
+
+/** Admin: current challenge roster + awards for completion scoring. */
+export function getAdminChallenge(): Promise<AdminChallenge> {
+  return apiClient.get<AdminChallenge>('/admin/challenges/current')
+}
+
+/** Admin: award/edit completion points per member for a challenge. */
+export function setChallengeScores(
+  challengeId: string,
+  scores: { memberId: string; points: number }[],
+): Promise<ApiResult> {
+  return apiClient.put<ApiResult>(`/admin/challenges/${challengeId}/scores`, { scores })
+}
 
 export function getMembers(): Promise<Member[]> {
   return apiClient.get<Member[]>('/admin/members')

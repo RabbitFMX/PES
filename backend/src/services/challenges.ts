@@ -9,6 +9,7 @@ import {
   setSubmissionScores,
   upsertSubmission,
 } from '../db/challenges'
+import { getMemberById } from '../db/members'
 import { getRotation } from '../db/rotation'
 import type { MemberRow } from '../db/types'
 import { HttpError } from '../middleware/errorHandler'
@@ -100,50 +101,94 @@ const EMPTY_CHALLENGE = {
   title: '',
   description: '',
   deadline: '',
+  scoringMode: 'competitive' as const,
   hasSubmitted: false,
   submissions: [],
 }
 
-/** GET /api/challenges/current — this week's challenge + ranked submissions. */
+/** The current setter's id + display name (for the always-visible "who sets" line). */
+async function currentSetter(): Promise<{ id: string | null; name: string | null }> {
+  const id = await currentSetterId()
+  if (!id) return { id: null, name: null }
+  const m = await getMemberById(id)
+  return { id, name: m?.name ?? null }
+}
+
+/** GET /api/challenges/current — this week's challenge + ranked/awarded submissions. */
 export async function getCurrentChallenge(member: MemberRow): Promise<ChallengeData> {
   const week = await getCurrentWeek(todayIso())
   if (!week) {
-    return challengeDataSchema.parse({ ...EMPTY_CHALLENGE, isSetterTurn: false })
+    return challengeDataSchema.parse({
+      ...EMPTY_CHALLENGE,
+      setterMemberId: null,
+      setterName: null,
+      isSetterTurn: false,
+    })
   }
 
   const challenge = await getChallengeForWeek(week.id)
   if (!challenge) {
-    // No challenge yet: the current setter sees the create form.
-    const isSetterTurn = (await currentSetterId()) === member.id
-    return challengeDataSchema.parse({ ...EMPTY_CHALLENGE, isSetterTurn })
+    // No challenge yet: surface who is up (the current setter) to everyone, and
+    // show the create form only to that setter.
+    const setter = await currentSetter()
+    return challengeDataSchema.parse({
+      ...EMPTY_CHALLENGE,
+      setterMemberId: setter.id,
+      setterName: setter.name,
+      isSetterTurn: setter.id === member.id,
+    })
   }
 
+  const setterName = challenge.setter_member_id
+    ? ((await getMemberById(challenge.setter_member_id))?.name ?? null)
+    : null
   const rows = await listSubmissions(challenge.id)
-  const withValues = rows.filter((r) => r.value !== null) as {
-    memberId: string
-    displayName: string
-    value: number
-  }[]
-  const nameOf = new Map(rows.map((r) => [r.memberId, r.displayName]))
-  const ranked = computeBonuses(
-    withValues.map((r) => ({ memberId: r.memberId, value: r.value })),
-    challenge.bonus_split ?? DEFAULT_BONUS_SPLIT,
-  )
+  const scoringMode = challenge.scoring_mode ?? 'competitive'
+
+  let submissions
+  if (scoringMode === 'completion') {
+    // Completion: the setter/admin awarded points directly; show them as-is,
+    // highest award first. No member-submitted value.
+    submissions = [...rows]
+      .sort((a, b) => b.bonusPoints - a.bonusPoints)
+      .map((r) => ({
+        memberId: r.memberId,
+        displayName: r.displayName,
+        value: null,
+        rank: null,
+        bonusPoints: r.bonusPoints,
+      }))
+  } else {
+    const withValues = rows.filter((r) => r.value !== null) as {
+      memberId: string
+      displayName: string
+      value: number
+    }[]
+    const nameOf = new Map(rows.map((r) => [r.memberId, r.displayName]))
+    const ranked = computeBonuses(
+      withValues.map((r) => ({ memberId: r.memberId, value: r.value })),
+      challenge.bonus_split ?? DEFAULT_BONUS_SPLIT,
+    )
+    submissions = ranked.map((r) => ({
+      memberId: r.memberId,
+      displayName: nameOf.get(r.memberId) ?? '',
+      value: r.value,
+      rank: r.rank,
+      bonusPoints: r.bonusPoints,
+    }))
+  }
 
   return challengeDataSchema.parse({
     id: challenge.id,
     title: challenge.title,
     description: challenge.description ?? '',
     deadline: challenge.deadline ?? '',
+    scoringMode,
+    setterMemberId: challenge.setter_member_id,
+    setterName,
     isSetterTurn: false, // a challenge already exists this week
-    hasSubmitted: rows.some((r) => r.memberId === member.id),
-    submissions: ranked.map((r) => ({
-      memberId: r.memberId,
-      displayName: nameOf.get(r.memberId) ?? '',
-      value: r.value,
-      rank: r.rank,
-      bonusPoints: r.bonusPoints,
-    })),
+    hasSubmitted: rows.some((r) => r.memberId === member.id && r.value !== null),
+    submissions,
   })
 }
 
@@ -153,19 +198,13 @@ export async function getPastChallenges(limit = 10): Promise<PastChallenge[]> {
   const results = await Promise.all(
     closed.map(async (c) => {
       const rows = await listSubmissions(c.id)
-      const withValues = rows.filter((r) => r.value !== null) as {
-        memberId: string
-        value: number
-      }[]
-      const nameOf = new Map(rows.map((r) => [r.memberId, r.displayName]))
-      const ranked = computeBonuses(
-        withValues.map((r) => ({ memberId: r.memberId, value: r.value })),
-      )
-      const winnerId = ranked.find((r) => r.rank === 1)?.memberId
+      // Winner = the top bonus recipient (works for both competitive and
+      // completion challenges, since both persist bonus_points).
+      const top = [...rows].sort((a, b) => b.bonusPoints - a.bonusPoints)[0]
       return pastChallengeSchema.parse({
         id: c.id,
         title: c.title,
-        winner: winnerId ? (nameOf.get(winnerId) ?? '') : '—',
+        winner: top && top.bonusPoints > 0 ? top.displayName : '—',
         weekLabel: `Týden ${c.weekNumber}`,
       })
     }),
@@ -194,8 +233,9 @@ export async function createChallenge(
     setter_member_id: member.id,
     title: input.title,
     description: input.description,
-    deadline: input.deadline,
+    deadline: input.deadline ?? null,
     bonus_split: input.bonusSplit ?? null,
+    scoring_mode: input.scoringMode,
   })
 }
 
@@ -210,6 +250,10 @@ export async function submitToChallenge(
 ): Promise<void> {
   const challenge = await getChallengeById(challengeId)
   if (!challenge) throw new HttpError(404, 'unknown_challenge')
+  // Completion challenges are scored by the setter/admin, not member values.
+  if ((challenge.scoring_mode ?? 'competitive') === 'completion') {
+    throw new HttpError(409, 'not_competitive')
+  }
 
   await upsertSubmission(challengeId, member.id, value)
 

@@ -5,8 +5,9 @@ import { MembersPanel } from './MembersPanel'
 import { ActivitiesPanel } from './ActivitiesPanel'
 import { RoundsPanel } from './RoundsPanel'
 import { RotationPanel } from './RotationPanel'
+import { ChallengesPanel } from './ChallengesPanel'
 
-type PanelId = 'members' | 'activities' | 'rounds' | 'rotation'
+type PanelId = 'members' | 'activities' | 'rounds' | 'rotation' | 'challenges'
 
 export function AdminPage() {
   const { t } = useTranslation()
@@ -27,6 +28,7 @@ export function AdminPage() {
             { id: 'activities', label: t('admin.activities') },
             { id: 'rounds', label: t('admin.rounds') },
             { id: 'rotation', label: t('admin.rotation') },
+            { id: 'challenges', label: t('admin.challenges') },
           ]}
         />
       </div>
@@ -36,6 +38,7 @@ export function AdminPage() {
         {panel === 'activities' && <ActivitiesPanel />}
         {panel === 'rounds' && <RoundsPanel />}
         {panel === 'rotation' && <RotationPanel />}
+        {panel === 'challenges' && <ChallengesPanel />}
       </div>
     </div>
   )

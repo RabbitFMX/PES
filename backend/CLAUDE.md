@@ -164,7 +164,15 @@ attaches `req.member` when a valid token is present and otherwise continues.
 - `GET /api/dashboard` — personal dashboard: weekly progress, streak ✅ (chunk 7)
 - `GET /api/leaderboard` — live standings across both divisions ✅ (chunk 8)
 - `GET /api/stats` — personal stats and history ✅ (chunk 9)
-- `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` ✅ (chunk 10)
+- `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` ✅ (chunk 10). A challenge has a
+  `scoring_mode`: **competitive** (members submit a value; top placements auto
+  -earn 30/20/10, ties split) or **completion** (the setter/admin awards points
+  per member; members do not submit). `current` surfaces `setterName`/
+  `setterMemberId` (the always-visible "who sets this week" line), `scoringMode`,
+  and submissions (value is null for completion). Challenge text ≤ 1000 chars,
+  deadline optional. **Challenge bonus points now count into weekly + round
+  totals** — folded into the leaderboard, dashboard and member-overview weekly
+  aggregations via `listWeekChallengeBonus(weekIds)`.
 - Admin (`GET /api/admin/...`, admin-only) ✅ (chunk 11): every mutating admin
   endpoint returns the uniform `{ ok: true } | { ok: false, message }`
   (validation failures included, so the frontend toasts them without a throw);
@@ -173,6 +181,10 @@ attaches `req.member` when a valid token is present and otherwise continues.
   - activities: `GET /api/admin/activities`, `POST /api/admin/activities`, `PATCH /api/admin/activities/:id`
   - rounds: `GET /api/admin/rounds`, `POST /api/admin/rounds`, `PATCH /api/admin/rounds/:id`
   - challenge rotation: `GET /api/admin/rotation`, `PUT /api/admin/rotation`
+    (the full member-id list — add/remove/reorder who may set a challenge)
+  - challenge scoring: `GET /api/admin/challenges/current` (roster + current
+    awards), `PUT /api/admin/challenges/:id/scores` (award/edit completion
+    points per member — these count into weekly totals)
 
 A weekly-status endpoint for the n8n nudge workflow (brief §20) is planned but
 not yet scoped into a chunk.

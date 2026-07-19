@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { adminActivitiesRouter } from './activities'
+import { adminChallengesRouter } from './challenges'
 import { adminMembersRouter } from './members'
 import { adminRotationRouter } from './rotation'
 import { adminRoundsRouter } from './rounds'
@@ -15,3 +16,4 @@ adminRouter.use(adminMembersRouter)
 adminRouter.use(adminActivitiesRouter)
 adminRouter.use(adminRoundsRouter)
 adminRouter.use(adminRotationRouter)
+adminRouter.use(adminChallengesRouter)

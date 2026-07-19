@@ -245,10 +245,12 @@ export interface StatsData {
   currentWeekByDay: { day: string; points: number }[]
 }
 
+export type ScoringMode = 'competitive' | 'completion'
+
 export interface ChallengeSubmissionRow {
   memberId: string
   displayName: string
-  value: number
+  value: number | null // null for completion-scored challenges (no submitted value)
   rank: number | null
   bonusPoints: number
 }
@@ -257,10 +259,22 @@ export interface ChallengeData {
   id: string | null
   title: string
   description: string
-  deadline: string // ISO datetime
+  deadline: string // ISO datetime, '' if none
+  scoringMode: ScoringMode
+  /** Who is up to set the challenge this week (always-visible "who sets" line). */
+  setterMemberId: string | null
+  setterName: string | null
   isSetterTurn: boolean
   hasSubmitted: boolean
   submissions: ChallengeSubmissionRow[]
+}
+
+/** Admin view of the current challenge for awarding completion points. */
+export interface AdminChallenge {
+  challengeId: string | null
+  title: string
+  scoringMode: ScoringMode
+  members: { memberId: string; displayName: string; division: Division; points: number }[]
 }
 
 export interface PastChallenge {

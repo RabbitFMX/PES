@@ -153,6 +153,7 @@ vi.mock('./db/challenges', () => ({
     else store.submissions.push({ challenge_id: challengeId, member_id: memberId, value })
   },
   setSubmissionScores: async () => {},
+  listWeekChallengeBonus: async () => [],
   hasSubmittedToChallenge: async (challengeId: string, memberId: string) =>
     store.submissions.some((s) => s.challenge_id === challengeId && s.member_id === memberId),
 }))

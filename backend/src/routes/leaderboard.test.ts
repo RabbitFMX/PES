@@ -14,10 +14,17 @@ const listWeeksByRound = vi.hoisted(() => vi.fn())
 const listRoundEntries = vi.hoisted(() => vi.fn())
 const listActiveMembers = vi.hoisted(() => vi.fn())
 
+const listWeekChallengeBonus = vi.hoisted(() =>
+  vi.fn<() => Promise<{ member_id: string; week_id: string; bonus_points: number }[]>>(
+    async () => [],
+  ),
+)
+
 vi.mock('../db/rounds', () => ({ getOpenRound, getMemberRoundDivisions }))
 vi.mock('../db/weeks', () => ({ getCurrentWeek, listWeeksByRound }))
 vi.mock('../db/logEntries', () => ({ listRoundEntries }))
 vi.mock('../db/members', () => ({ listActiveMembers }))
+vi.mock('../db/challenges', () => ({ listWeekChallengeBonus }))
 
 function member(id: string, name: string, division: 'A' | 'B'): MemberRow {
   return {
@@ -77,6 +84,7 @@ describe('GET /api/leaderboard', () => {
     getCurrentWeek.mockResolvedValue(week(2))
     listWeeksByRound.mockResolvedValue([week(1), week(2)])
     getMemberRoundDivisions.mockResolvedValue([])
+    listWeekChallengeBonus.mockResolvedValue([]) // reset (clearAllMocks keeps impls)
     listActiveMembers.mockResolvedValue([
       member('klara', 'Klára Horáková', 'A'),
       member('ondra', 'Ondra Dvořák', 'A'),
@@ -126,6 +134,29 @@ describe('GET /api/leaderboard', () => {
     expect(meRow.goalMetThisWeek).toBe(true)
     const klara = res.body.packA.find((r: { memberId: string }) => r.memberId === 'klara')
     expect(klara.goalMetThisWeek).toBe(false)
+  })
+
+  it('folds challenge bonus into round totals and the current-week goal', async () => {
+    listRoundEntries.mockResolvedValue([
+      { member_id: 'eva', week_id: 'week-1', final_points: 100 }, // round 100, current wk 0
+      { member_id: 'tomas', week_id: 'week-1', final_points: 90 },
+    ])
+    // A current-week (week-2) award of 100 lifts tomas to round 190 (past eva)
+    // and meets his weekly goal purely via the challenge.
+    listWeekChallengeBonus.mockResolvedValue([
+      { member_id: 'tomas', week_id: 'week-2', bonus_points: 100 },
+    ])
+
+    const res = await request(buildApp())
+      .get('/api/leaderboard')
+      .set('Authorization', 'Bearer valid')
+
+    expect(res.status).toBe(200)
+    expect(res.body.packB.map((r: { memberId: string }) => r.memberId)).toEqual(['tomas', 'eva'])
+    const tomas = res.body.packB.find((r: { memberId: string }) => r.memberId === 'tomas')
+    expect(tomas.goalMetThisWeek).toBe(true) // met purely via the challenge award
+    const eva = res.body.packB.find((r: { memberId: string }) => r.memberId === 'eva')
+    expect(eva.goalMetThisWeek).toBe(false)
   })
 
   it('returns an empty pack when nobody in it logged activity', async () => {
