@@ -230,6 +230,69 @@ export async function listDetailedActivityPoints(client: Supabase = supabase): P
 }
 
 /**
+ * Per-member × per-activity points across a set of weeks (a round). Quick-add
+ * entries (null activity_id) are kept as their own bucket. Feeds the
+ * leaderboard's per-user activity breakdown for the selected round. Paginated.
+ */
+export async function listWeeksActivityPoints(
+  weekIds: string[],
+  client: Supabase = supabase,
+): Promise<
+  {
+    member_id: string
+    activity_id: string | null
+    name_cs: string
+    name_en: string
+    points: number
+  }[]
+> {
+  if (weekIds.length === 0) return []
+
+  const PAGE = 1000
+  type Row = {
+    member_id: string
+    final_points: number
+    activity_id: string | null
+    activity: { name_cs: string; name_en: string } | null
+  }
+  // key: `${member_id}|${activity_id ?? ''}`
+  const agg = new Map<
+    string,
+    {
+      member_id: string
+      activity_id: string | null
+      name_cs: string
+      name_en: string
+      points: number
+    }
+  >()
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await client
+      .from('log_entry')
+      .select('member_id, final_points, activity_id, activity(name_cs, name_en)')
+      .in('week_id', weekIds)
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    const rows = (data ?? []) as unknown as Row[]
+    for (const r of rows) {
+      const key = `${r.member_id}|${r.activity_id ?? ''}`
+      const cur = agg.get(key) ?? {
+        member_id: r.member_id,
+        activity_id: r.activity_id,
+        name_cs: r.activity?.name_cs ?? '',
+        name_en: r.activity?.name_en ?? '',
+        points: 0,
+      }
+      cur.points += Number(r.final_points)
+      agg.set(key, cur)
+    }
+    if (rows.length < PAGE) break
+  }
+  return [...agg.values()].map((a) => ({ ...a, points: Math.round(a.points * 100) / 100 }))
+}
+
+/**
  * Whether the member already logged an identical entry (same activity, quantity
  * and date). Used for the soft duplicate warning — the new entry is still
  * saved, but the UI flags it.

@@ -122,6 +122,7 @@ vi.mock('./db/logEntries', () => ({
     store.logEntries
       .filter((e) => weekIds.includes(e.week_id))
       .map((e) => ({ member_id: e.member_id, week_id: e.week_id, final_points: e.final_points })),
+  listWeeksActivityPoints: async () => [],
 }))
 
 vi.mock('./db/activities', () => ({

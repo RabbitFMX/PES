@@ -7,16 +7,29 @@ import { leaderboardRouter } from './leaderboard'
 import type { MemberRow, RoundRow, WeekRow } from '../db/types'
 
 // Mock the DB layer so the test drives the endpoint without a live Supabase.
-const getOpenRound = vi.hoisted(() => vi.fn())
+const listRounds = vi.hoisted(() => vi.fn())
 const getMemberRoundDivisions = vi.hoisted(() => vi.fn())
 const getCurrentWeek = vi.hoisted(() => vi.fn())
 const listWeeksByRound = vi.hoisted(() => vi.fn())
 const listRoundEntries = vi.hoisted(() => vi.fn())
+const listWeeksActivityPoints = vi.hoisted(() =>
+  vi.fn<
+    () => Promise<
+      {
+        member_id: string
+        activity_id: string | null
+        name_cs: string
+        name_en: string
+        points: number
+      }[]
+    >
+  >(async () => []),
+)
 const listActiveMembers = vi.hoisted(() => vi.fn())
 
-vi.mock('../db/rounds', () => ({ getOpenRound, getMemberRoundDivisions }))
+vi.mock('../db/rounds', () => ({ listRounds, getMemberRoundDivisions }))
 vi.mock('../db/weeks', () => ({ getCurrentWeek, listWeeksByRound }))
-vi.mock('../db/logEntries', () => ({ listRoundEntries }))
+vi.mock('../db/logEntries', () => ({ listRoundEntries, listWeeksActivityPoints }))
 vi.mock('../db/members', () => ({ listActiveMembers }))
 
 function member(id: string, name: string, division: 'A' | 'B'): MemberRow {
@@ -73,7 +86,8 @@ function week(n: number): WeekRow {
 describe('GET /api/leaderboard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getOpenRound.mockResolvedValue(round)
+    listRounds.mockResolvedValue([round])
+    listWeeksActivityPoints.mockResolvedValue([]) // reset (clearAllMocks keeps impls)
     getCurrentWeek.mockResolvedValue(week(2))
     listWeeksByRound.mockResolvedValue([week(1), week(2)])
     getMemberRoundDivisions.mockResolvedValue([])
@@ -126,6 +140,41 @@ describe('GET /api/leaderboard', () => {
     expect(meRow.goalMetThisWeek).toBe(true)
     const klara = res.body.packA.find((r: { memberId: string }) => r.memberId === 'klara')
     expect(klara.goalMetThisWeek).toBe(false)
+  })
+
+  it('attaches a per-user per-activity breakdown for the round', async () => {
+    listWeeksActivityPoints.mockResolvedValue([
+      { member_id: 'me', activity_id: 'run', name_cs: 'běh', name_en: 'Running', points: 900 },
+      { member_id: 'me', activity_id: null, name_cs: '', name_en: '', points: 384 },
+    ])
+
+    const res = await request(buildApp())
+      .get('/api/leaderboard')
+      .set('Authorization', 'Bearer valid')
+
+    expect(res.status).toBe(200)
+    expect(res.body.roundId).toBe('round-1')
+    expect(res.body.isOpenRound).toBe(true)
+    const meRow = res.body.packA.find((r: { memberId: string }) => r.memberId === 'me')
+    // Sorted highest-first: run (900) before the quick-add bucket (384).
+    expect(meRow.pointsByActivity).toEqual([
+      { activityId: 'run', nameCs: 'běh', nameEn: 'Running', points: 900 },
+      { activityId: null, nameCs: '', nameEn: '', points: 384 },
+    ])
+  })
+
+  it('GET /api/rounds lists the browsable rounds', async () => {
+    const res = await request(buildApp()).get('/api/rounds').set('Authorization', 'Bearer valid')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual([
+      {
+        id: 'round-1',
+        name: 'Round 1',
+        status: 'open',
+        startDate: '2026-01-01',
+        endDate: '2026-06-30',
+      },
+    ])
   })
 
   it('returns an empty pack when nobody in it logged activity', async () => {

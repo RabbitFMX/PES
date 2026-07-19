@@ -108,6 +108,9 @@
     "goalMet": "Goal met",
     "goalNotMet": "Goal not met",
     "you": "You",
+    "round": "Round",
+    "live": "live",
+    "breakdown": "Points by activity",
     "empty": "No one's moved this week yet. Be first."
   },
   "stats": {

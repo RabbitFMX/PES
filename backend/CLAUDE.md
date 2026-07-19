@@ -162,7 +162,14 @@ attaches `req.member` when a valid token is present and otherwise continues.
 - `POST /api/log-entries/parse` — LLM natural-language → structured preview;
   **deferred to seminar 6** — returns `501 not_implemented` (stub, no LLM call)
 - `GET /api/dashboard` — personal dashboard: weekly progress, streak ✅ (chunk 7)
-- `GET /api/leaderboard` — live standings across both divisions ✅ (chunk 8)
+- `GET /api/leaderboard[?roundId=…]` — standings for a round (default open,
+  else most recent), split by pack. Each row carries a per-user per-activity
+  breakdown (`pointsByActivity`, incl. a quick-add bucket) for the selected
+  round; the payload echoes `roundId`/`roundName`/`isOpenRound` (past rounds
+  have no current week → the goal column is hidden) ✅ (chunk 8; round filter +
+  breakdown added later)
+- `GET /api/rounds` — the rounds a member can browse (leaderboard filter);
+  newest-first, non-admin ✅
 - `GET /api/stats` — personal stats and history ✅ (chunk 9)
 - `GET /api/challenges/current` · `GET /api/challenges/past` · `POST /api/challenges` · `POST /api/challenges/:id/submissions` ✅ (chunk 10)
 - Admin (`GET /api/admin/...`, admin-only) ✅ (chunk 11): every mutating admin

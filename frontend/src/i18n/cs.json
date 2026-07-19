@@ -108,6 +108,9 @@
     "goalMet": "Cíl splněn",
     "goalNotMet": "Cíl nesplněn",
     "you": "Ty",
+    "round": "Kolo",
+    "live": "aktuální",
+    "breakdown": "Body podle aktivit",
     "empty": "Tento týden ještě nikdo nezaběhl. Buď první."
   },
   "stats": {

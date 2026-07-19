@@ -1,17 +1,28 @@
 import { Router } from 'express'
 import type { AuthedRequest } from '../middleware/auth'
-import { getLeaderboard } from '../services/leaderboard'
+import { getLeaderboard, getRoundOptions } from '../services/leaderboard'
 
 export const leaderboardRouter = Router()
 
 /**
- * GET /api/leaderboard — current-round standings split into pack A / B in the
- * frontend `LeaderboardData` shape. Mounted behind `requireAuth` in app.ts.
+ * GET /api/leaderboard[?roundId=…] — standings for the selected round (default:
+ * open, else most recent) split into pack A / B, each with a per-user
+ * per-activity breakdown. Mounted behind `requireAuth` in app.ts.
  */
 leaderboardRouter.get('/leaderboard', async (req, res, next) => {
   try {
     const { member } = req as AuthedRequest
-    res.json(await getLeaderboard(member))
+    const roundId = typeof req.query.roundId === 'string' ? req.query.roundId : undefined
+    res.json(await getLeaderboard(member, roundId))
+  } catch (err) {
+    next(err)
+  }
+})
+
+/** GET /api/rounds — the rounds a member can browse (leaderboard filter). */
+leaderboardRouter.get('/rounds', async (_req, res, next) => {
+  try {
+    res.json(await getRoundOptions())
   } catch (err) {
     next(err)
   }

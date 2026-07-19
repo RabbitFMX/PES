@@ -64,7 +64,14 @@ vi.mock('./lib/api', () => ({
     elevationByActivity: [],
     cumulative: [],
   }),
-  getLeaderboard: async () => ({ packA: [], packB: [] }),
+  getLeaderboard: async () => ({
+    roundId: 'r1',
+    roundName: 'Round 1',
+    isOpenRound: true,
+    packA: [],
+    packB: [],
+  }),
+  getRoundOptions: async () => [],
   getChallenge: async () => ({
     id: null,
     title: '',

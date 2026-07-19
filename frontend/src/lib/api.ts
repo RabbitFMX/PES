@@ -25,6 +25,7 @@ import type {
   PastChallenge,
   QuickAddInput,
   Round,
+  RoundOption,
   RotationEntry,
   StatsData,
   ThemePref,
@@ -187,8 +188,14 @@ export function parseNaturalLanguage(text: string): Promise<LogPreview[]> {
 
 /* ---- Leaderboard ---- */
 
-export function getLeaderboard(): Promise<LeaderboardData> {
-  return apiClient.get<LeaderboardData>('/leaderboard')
+export function getLeaderboard(roundId?: string): Promise<LeaderboardData> {
+  const query = roundId ? `?roundId=${encodeURIComponent(roundId)}` : ''
+  return apiClient.get<LeaderboardData>(`/leaderboard${query}`)
+}
+
+/** Rounds a member can browse in the leaderboard filter (newest-first). */
+export function getRoundOptions(): Promise<RoundOption[]> {
+  return apiClient.get<RoundOption[]>('/rounds')
 }
 
 /* ---- My Stats ---- */

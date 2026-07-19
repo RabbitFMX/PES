@@ -212,6 +212,13 @@ export interface QuickAddInput {
 }
 export type LogInput = DetailedLogInput | QuickAddInput
 
+export interface LeaderboardActivityPoints {
+  activityId: string | null // null = quick-add bucket
+  nameCs: string
+  nameEn: string
+  points: number
+}
+
 export interface LeaderboardRow {
   memberId: string
   displayName: string
@@ -220,11 +227,25 @@ export interface LeaderboardRow {
   roundTotal: number
   goalMetThisWeek: boolean
   isCurrentUser: boolean
+  /** Per-activity points in the selected round (expandable breakdown). */
+  pointsByActivity: LeaderboardActivityPoints[]
 }
 
 export interface LeaderboardData {
+  roundId: string | null
+  roundName: string
+  isOpenRound: boolean
   packA: LeaderboardRow[]
   packB: LeaderboardRow[]
+}
+
+/** A round the member can browse in the leaderboard filter. */
+export interface RoundOption {
+  id: string
+  name: string
+  status: RoundStatus
+  startDate: string
+  endDate: string
 }
 
 export interface StatsRecords {
