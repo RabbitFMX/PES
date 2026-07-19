@@ -21,7 +21,10 @@ export type ActivityIconKey =
   | 'bar'
   | 'yoga'
   | 'jumprope'
-  | 'ball'
+  | 'football'
+  | 'racket'
+  | 'basketball'
+  | 'dumbbell'
   | 'route'
   | 'flag'
   | 'trophy'
@@ -51,7 +54,6 @@ const ICON_BY_ACTIVITY: Record<string, ActivityIconKey> = {
   lunges: 'strength',
   'hip-raises': 'strength',
   vups: 'strength',
-  exercise: 'strength',
   burpees: 'burpee',
   'burpees-pushup': 'burpee',
   pullups: 'bar',
@@ -59,7 +61,10 @@ const ICON_BY_ACTIVITY: Record<string, ActivityIconKey> = {
   'hanging-leg-raises': 'bar',
   'sun-salutation': 'yoga',
   jumprope: 'jumprope',
-  sports: 'ball',
+  // Sport buckets use distinct sport glyphs; extra keys (racket/basketball) are
+  // available for any sport activities an admin adds to the rate table.
+  sports: 'football',
+  exercise: 'dumbbell',
   strava: 'route',
   race: 'flag',
   ondra: 'trophy',

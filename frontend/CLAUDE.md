@@ -97,7 +97,11 @@ src/
   Profile; rendered via the `Avatar` primitive for any `dog:` token.
 - **Activity icons:** `components/ActivityIcon.tsx` + mapping in
   `lib/activityIcon.ts` — one line-icon set for all 35 activities, used in the
-  log picker, stats, overview and pie legend.
+  log picker, stats, overview and pie legend. Sport buckets have dedicated
+  original glyphs (`football`/`racket`/`basketball`/`dumbbell`); `sports`→
+  football, `exercise`→dumbbell, and racket/basketball are ready for any sport
+  activities an admin adds. (Drawn in-house — the linked Streamline set is
+  licensed art we can't bundle.)
 - **Test-data toggle:** the per-browser "test data" flag (`lib/testData.ts`,
   localStorage). When on, `apiClient` adds the `X-PES-Test-Data` header and the
   backend serves generated per-activity detail (real weekly totals preserved) so

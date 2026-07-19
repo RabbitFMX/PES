@@ -112,10 +112,34 @@ const GLYPHS: Record<ActivityIconKey, ReactNode> = {
       <path d="M12 16v4" />
     </>
   ),
-  ball: (
+  football: (
     <>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 4l3 5-3 4-3-4 3-5M4 11l5 2M20 11l-5 2M9 19l1-4M15 19l-1-4" opacity="0.7" />
+      <circle cx="12" cy="12" r="8.5" />
+      {/* pentagon centre + seams to the edges (original soccer-ball mark) */}
+      <path d="M12 8.5l3 2.2-1.1 3.6h-3.8L9 10.7l3-2.2Z" />
+      <path d="M12 3.5v5M4.5 9.5l4.5 1.2M19.5 9.5l-4.5 1.2M7.2 19.4l2.7-3.1M16.8 19.4l-2.7-3.1" />
+    </>
+  ),
+  racket: (
+    <>
+      <ellipse cx="9" cy="9" rx="5.5" ry="6.5" transform="rotate(-40 9 9)" />
+      <path d="M6.5 11.5l-1.7 1.7" />
+      <path d="M4.8 13.2l-1.8 4.6 4.6-1.8" />
+      <path d="M6.5 6.5l5 5M9.5 5l4 4M4.8 9.5l4.6 4.6" opacity="0.6" />
+    </>
+  ),
+  basketball: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 3.5v17M3.5 12h17" />
+      <path d="M5 6c3 2.5 3 9.5 0 12M19 6c-3 2.5-3 9.5 0 12" opacity="0.8" />
+    </>
+  ),
+  dumbbell: (
+    <>
+      <path d="M9 8v8M15 8v8M9 12h6" />
+      <path d="M6 6v12M18 6v12" />
+      <path d="M4 9v6M20 9v6" />
     </>
   ),
   route: (

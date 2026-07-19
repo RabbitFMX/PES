@@ -15,6 +15,11 @@ describe('activityIconKey', () => {
     expect(activityIconKey('pullups')).toBe('bar')
   })
 
+  it('maps sport buckets to dedicated sport glyphs', () => {
+    expect(activityIconKey('sports')).toBe('football')
+    expect(activityIconKey('exercise')).toBe('dumbbell')
+  })
+
   it('falls back to generic for unknown, null or undefined ids', () => {
     expect(activityIconKey('does-not-exist')).toBe('generic')
     expect(activityIconKey(null)).toBe('generic')
