@@ -210,6 +210,7 @@
     "endDate": "End",
     "openRound": "Open",
     "closeRound": "Close",
+    "exportExcel": "Export to Excel",
     "moveUp": "Up",
     "moveDown": "Down",
     "saveSuccess": "Saved.",

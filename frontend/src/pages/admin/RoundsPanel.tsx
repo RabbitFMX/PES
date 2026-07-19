@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAsync } from '../../lib/useAsync'
-import { getRounds, saveRound } from '../../lib/api'
+import { downloadRoundExport, getRounds, saveRound } from '../../lib/api'
 import type { Round } from '../../lib/types'
 import { useToast } from '../../context/toast'
 import { Card } from '../../components/ui/Card'
@@ -15,9 +15,21 @@ export function RoundsPanel() {
   const { showToast } = useToast()
   const { data, loading, error, reload } = useAsync<Round[]>(getRounds)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [exportingId, setExportingId] = useState<string | null>(null)
 
   if (loading) return <Skeleton className="h-48" />
   if (error || !data) return <ErrorState onRetry={reload} />
+
+  async function exportRound(round: Round) {
+    setExportingId(round.id)
+    try {
+      await downloadRoundExport(round.id)
+    } catch {
+      showToast({ message: t('common.loadError'), variant: 'error' })
+    } finally {
+      setExportingId(null)
+    }
+  }
 
   async function toggle(round: Round) {
     setBusyId(round.id)
@@ -45,8 +57,16 @@ export function RoundsPanel() {
               {round.startDate} → {round.endDate}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Badge variant={round.status === 'open' ? 'success' : 'neutral'}>{round.status}</Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              loading={exportingId === round.id}
+              onClick={() => exportRound(round)}
+            >
+              {t('admin.exportExcel')}
+            </Button>
             <Button
               variant="secondary"
               size="sm"

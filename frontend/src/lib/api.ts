@@ -279,6 +279,22 @@ export function getRounds(): Promise<Round[]> {
   return apiClient.get<Round[]>('/admin/rounds')
 }
 
+/**
+ * Download a round as an .xlsx (legacy PES 2.0.xlsx round-sheet layout) and
+ * trigger a browser save. Admin-only endpoint; auth is attached by apiClient.
+ */
+export async function downloadRoundExport(roundId: string): Promise<void> {
+  const { blob, filename } = await apiClient.download(`/admin/rounds/${roundId}/export`)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
 export function saveRound(round: Round): Promise<ApiResult> {
   return apiClient.patch<ApiResult>(`/admin/rounds/${round.id}`, {
     name: round.name,

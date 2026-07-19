@@ -62,4 +62,22 @@ export const apiClient = {
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
+  /** Fetch a binary file (with auth) as a Blob + its Content-Disposition name. */
+  download: async (path: string): Promise<{ blob: Blob; filename: string }> => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    const headers: Record<string, string> = {}
+    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`
+    if (isTestDataEnabled()) headers[TEST_DATA_HEADER] = '1'
+
+    const res = await fetch(`${BASE_URL}${path}`, { headers })
+    if (!res.ok) throw new ApiError(res.status, res.statusText)
+
+    const blob = await res.blob()
+    const cd = res.headers.get('Content-Disposition') ?? ''
+    const match = /filename\*=UTF-8''([^;]+)/.exec(cd) ?? /filename="?([^";]+)"?/.exec(cd)
+    const filename = match ? decodeURIComponent(match[1]) : 'download'
+    return { blob, filename }
+  },
 }
