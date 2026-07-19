@@ -2,7 +2,8 @@ import { useId, type ReactNode } from 'react'
 import {
   DOG_BREED_BY_ID,
   DOG_COAT_BY_ID,
-  COLLAR_COLOR,
+  DOG_COLORWAYS,
+  coerceColorway,
   type DogBuild,
   type DogCollar,
   type DogConfig,
@@ -206,13 +207,17 @@ export function DogAvatar({
   config,
   className,
   title,
+  name,
 }: {
   config: DogConfig
   className?: string
   title?: string
+  /** When set, a small name tag is drawn under the dog with the colorway accent. */
+  name?: string
 }) {
   const breed = DOG_BREED_BY_ID[config.breed] ?? DOG_BREED_BY_ID.labrador
   const coat = DOG_COAT_BY_ID[config.coat] ?? DOG_COAT_BY_ID.tan
+  const colorway = DOG_COLORWAYS[coerceColorway(config.colorway)]
   const L = BUILD[breed.build]
   const base = coat.base
   const belly = coat.belly ?? base
@@ -276,32 +281,63 @@ export function DogAvatar({
       <circle cx={eyeX} cy={eyeY} r={2} fill={NOSE} />
       <circle cx={eyeX - 0.6} cy={eyeY - 0.7} r={0.6} fill={HL} opacity={0.7} />
 
-      {/* Collar around the neck */}
-      {config.collar !== 'none' && <Collar collar={config.collar} L={L} />}
+      {/* Collar around the neck (tinted by the colourway) */}
+      {config.collar !== 'none' && <Collar collar={config.collar} L={L} color={colorway.collar} />}
+
+      {/* Name tag under the dog (colourway accent) */}
+      {name && <NameTag name={name} accent={colorway.accent} ink={colorway.ink} />}
     </svg>
   )
 }
 
-function Collar({ collar, L }: { collar: DogCollar; L: Layout }) {
+/** A small rounded name plate at the foot of the avatar (fits any length). */
+function NameTag({ name, accent, ink }: { name: string; accent: string; ink: string }) {
+  const y = 89
+  const h = 10
+  const x = 12
+  const w = 76
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h} rx={h / 2} fill={accent} />
+      <text
+        x={50}
+        y={y + h / 2 + 2.6}
+        textAnchor="middle"
+        fontSize={6.5}
+        fontWeight={700}
+        fill={ink}
+        textLength={name.length > 10 ? w - 8 : undefined}
+        lengthAdjust="spacingAndGlyphs"
+      >
+        {name}
+      </text>
+    </g>
+  )
+}
+
+function Collar({
+  collar,
+  L,
+  color = '#c2410c',
+}: {
+  collar: DogCollar
+  L: Layout
+  color?: string
+}) {
   const cx = L.headCx - 6
   const cy = L.headCy + L.headR + 3
   const angle = -58
   if (collar === 'bandana') {
     return (
       <g transform={`rotate(${angle} ${cx} ${cy})`}>
-        <path d={`M${cx - 8} ${cy - 3} h16 l -8 12 Z`} fill={COLLAR_COLOR} />
-        <path
-          d={`M${cx - 8} ${cy - 3} h16`}
-          stroke={COLLAR_COLOR}
-          strokeWidth={3}
-          strokeLinecap="round"
-        />
+        <path d={`M${cx - 8} ${cy - 3} h16 l -8 12 Z`} fill={color} />
+        <path d={`M${cx - 8} ${cy - 3} h16`} stroke={color} strokeWidth={3} strokeLinecap="round" />
       </g>
     )
   }
   return (
     <g transform={`rotate(${angle} ${cx} ${cy})`}>
-      <rect x={cx - 9} y={cy - 2.5} width={18} height={4.5} rx={2} fill={COLLAR_COLOR} />
+      <rect x={cx - 9} y={cy - 2.5} width={18} height={4.5} rx={2} fill={color} />
       {collar === 'spiked' &&
         [-6, -2, 2, 6].map((dx, i) => (
           <path key={i} d={`M${cx + dx} ${cy + 2} l -1.6 3 h3.2 Z`} fill="#e5e7eb" />

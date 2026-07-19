@@ -19,6 +19,59 @@ export interface DogConfig {
   coat: string
   tail: DogTail
   collar: DogCollar
+  /** One of 3 colour combinations (collar + name-tag accent); index 0–2. */
+  colorway: number
+}
+
+/**
+ * Three colour combinations every dog can wear — the collar/name-tag accent
+ * scheme (independent of the coat). Keeps "each dog has 3 colour combos"
+ * (project update) a small, orthogonal choice on top of the breed + coat.
+ */
+export interface DogColorway {
+  id: string
+  nameCs: string
+  nameEn: string
+  collar: string
+  /** Name-tag plate + accent colour. */
+  accent: string
+  /** Readable text colour on the plate. */
+  ink: string
+}
+
+export const DOG_COLORWAYS: DogColorway[] = [
+  {
+    id: 'ember',
+    nameCs: 'ohnivá',
+    nameEn: 'Ember',
+    collar: '#c2410c',
+    accent: '#ea580c',
+    ink: '#ffffff',
+  },
+  {
+    id: 'ocean',
+    nameCs: 'mořská',
+    nameEn: 'Ocean',
+    collar: '#0369a1',
+    accent: '#0ea5e9',
+    ink: '#ffffff',
+  },
+  {
+    id: 'forest',
+    nameCs: 'lesní',
+    nameEn: 'Forest',
+    collar: '#15803d',
+    accent: '#16a34a',
+    ink: '#ffffff',
+  },
+]
+
+export const DOG_COLORWAY_COUNT = DOG_COLORWAYS.length
+
+/** Clamp any value to a valid colorway index. */
+export function coerceColorway(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isInteger(n) && n >= 0 && n < DOG_COLORWAY_COUNT ? n : 0
 }
 
 /* ---- Coats (realistic colours + patterns: spots, patches, saddle, …) ---- */
@@ -371,6 +424,7 @@ export const DEFAULT_DOG: DogConfig = {
   coat: 'gold',
   tail: 'saber',
   collar: 'flat',
+  colorway: 0,
 }
 
 const PREFIX = 'dog:'
@@ -380,7 +434,7 @@ export function isDogAvatar(src: string | null | undefined): boolean {
 }
 
 export function serializeDog(c: DogConfig): string {
-  return `${PREFIX}${c.breed}:${c.coat}:${c.tail}:${c.collar}`
+  return `${PREFIX}${c.breed}:${c.coat}:${c.tail}:${c.collar}:${c.colorway}`
 }
 
 /** Map the six legacy head-only styles onto the closest new breed. */
@@ -401,7 +455,8 @@ export function parseDog(src: string | null | undefined): DogConfig {
   if (!isDogAvatar(src)) return DEFAULT_DOG
   const parts = (src as string).split(':') // ['dog', ...]
 
-  // New format: dog:breed:coat:tail:collar
+  // New format: dog:breed:coat:tail:collar[:colorway] (colorway is optional so
+  // pre-colorway tokens still parse — they default to colorway 0).
   if (parts.length >= 5) {
     const breed = coerce(parts[1], DOG_BREED_IDS, DEFAULT_DOG.breed)
     return {
@@ -409,13 +464,14 @@ export function parseDog(src: string | null | undefined): DogConfig {
       coat: coerce(parts[2], DOG_COAT_IDS, DOG_BREED_BY_ID[breed].coats[0]),
       tail: coerce(parts[3], DOG_TAILS, DOG_BREED_BY_ID[breed].tail),
       collar: coerce(parts[4], DOG_COLLARS, 'flat'),
+      colorway: coerceColorway(parts[5]),
     }
   }
 
   // Legacy format: dog:style:color:size  → map style→breed, color→coat.
   const breed = LEGACY_STYLE_TO_BREED[parts[1]] ?? DEFAULT_DOG.breed
   const coat = coerce(parts[2] ?? '', DOG_COAT_IDS, DOG_BREED_BY_ID[breed].coats[0])
-  return { breed, coat, tail: DOG_BREED_BY_ID[breed].tail, collar: 'flat' }
+  return { breed, coat, tail: DOG_BREED_BY_ID[breed].tail, collar: 'flat', colorway: 0 }
 }
 
 /** Stable hash of a string → non-negative int. */
@@ -437,5 +493,6 @@ export function dogFromSeed(seed: string): DogConfig {
     coat: breed.coats[(h >>> 3) % breed.coats.length],
     tail: breed.tail,
     collar: DOG_COLLARS[1 + ((h >>> 6) % (DOG_COLLARS.length - 1))], // never 'none' by default
+    colorway: (h >>> 9) % DOG_COLORWAY_COUNT,
   }
 }

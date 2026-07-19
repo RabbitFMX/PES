@@ -90,11 +90,15 @@ src/
   (`recordConsent` in `lib/api.ts`) for the server audit log. To wire a real
   analytics/marketing vendor, fill in `lib/analytics.ts` / `lib/marketing.ts` —
   the consent gate already wraps them.
-- **Dog avatars:** `lib/dogAvatar.ts` (data + `dog:<breed>:<coat>:<tail>:<collar>`
-  token, legacy-token compatible) + `components/DogAvatar.tsx` (parametric
-  full-body side-view SVG). ~24 breeds (ear/snout/build presets), ~15 coats incl.
-  patterns (spots/patches/saddle/mask/merle), 5 tails and 4 collars. Built in
-  Profile; rendered via the `Avatar` primitive for any `dog:` token.
+- **Dog avatars:** `lib/dogAvatar.ts` (data + `dog:<breed>:<coat>:<tail>:<collar>:<colorway>`
+  token, legacy- and pre-colorway-token compatible) + `components/DogAvatar.tsx`
+  (parametric full-body side-view SVG). ~24 breeds (ear/snout/build presets),
+  ~15 coats incl. patterns (spots/patches/saddle/mask/merle), 5 tails, 4 collars,
+  and **3 colourways** (`DOG_COLORWAYS` — collar + name-tag accent scheme; each
+  dog can wear any of the 3). `DogAvatar` takes an optional `name` prop that
+  draws a **name tag** under the dog in the colourway accent (shown large in the
+  Profile builder preview). Built in Profile; rendered via the `Avatar` primitive
+  for any `dog:` token.
 - **Activity icons:** `components/ActivityIcon.tsx` + mapping in
   `lib/activityIcon.ts` — one line-icon set for all 35 activities, used in the
   log picker, stats, overview and pie legend.

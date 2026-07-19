@@ -3,6 +3,7 @@ import {
   DOG_BREED_BY_ID,
   DOG_BREED_IDS,
   DOG_COAT_IDS,
+  DOG_COLORWAY_COUNT,
   dogFromSeed,
   isDogAvatar,
   parseDog,
@@ -16,9 +17,28 @@ describe('dog avatar token', () => {
     expect(isDogAvatar(null)).toBe(false)
   })
 
-  it('round-trips a config', () => {
-    const cfg = { breed: 'husky', coat: 'grey', tail: 'curl', collar: 'bandana' } as const
+  it('round-trips a config (incl. colorway)', () => {
+    const cfg = {
+      breed: 'husky',
+      coat: 'grey',
+      tail: 'curl',
+      collar: 'bandana',
+      colorway: 2,
+    } as const
     expect(parseDog(serializeDog(cfg))).toEqual(cfg)
+  })
+
+  it('defaults colorway to 0 for pre-colorway tokens and clamps bad values', () => {
+    // 5-part token (no colorway) → colorway 0.
+    expect(parseDog('dog:husky:grey:curl:flat').colorway).toBe(0)
+    // Out-of-range colorway index is clamped to 0.
+    expect(parseDog('dog:husky:grey:curl:flat:99').colorway).toBe(0)
+  })
+
+  it('dogFromSeed picks a valid colorway', () => {
+    const cfg = dogFromSeed('member-42')
+    expect(cfg.colorway).toBeGreaterThanOrEqual(0)
+    expect(cfg.colorway).toBeLessThan(DOG_COLORWAY_COUNT)
   })
 
   it('coerces unknown parts to sensible defaults', () => {

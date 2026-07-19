@@ -12,6 +12,7 @@ import {
   DOG_BREED_BY_ID,
   DOG_COAT_BY_ID,
   DOG_COLLARS,
+  DOG_COLORWAYS,
   DOG_TAILS,
   dogFromSeed,
   isDogAvatar,
@@ -92,7 +93,12 @@ export function ProfilePage() {
       <Card className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
           <span className="inline-block size-24 overflow-hidden rounded-[var(--radius-md)] bg-secondary/5 ring-1 ring-border">
-            <DogAvatar config={dog} className="h-full w-full" title={name || user.displayName} />
+            <DogAvatar
+              config={dog}
+              className="h-full w-full"
+              title={name || user.displayName}
+              name={name || user.displayName}
+            />
           </span>
           <div className="flex-1">
             <Input
@@ -130,7 +136,13 @@ export function ProfilePage() {
                   )}
                 >
                   <DogAvatar
-                    config={{ breed: b.id, coat: previewCoat, tail: b.tail, collar: 'none' }}
+                    config={{
+                      breed: b.id,
+                      coat: previewCoat,
+                      tail: b.tail,
+                      collar: 'none',
+                      colorway: dog.colorway,
+                    }}
                     className="h-12 w-12"
                   />
                   <span className="w-full truncate text-center text-[11px] text-muted">
@@ -166,6 +178,31 @@ export function ProfilePage() {
                       ? `radial-gradient(circle at 30% 30%, ${c.patternColor} 0 25%, ${c.base} 26%)`
                       : c.base,
                   }}
+                />
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Colour combination (collar + name-tag accent) */}
+        <div>
+          <p className="mb-2 text-sm font-medium text-text">{t('settings.avatarColorway')}</p>
+          <div className="flex flex-wrap gap-2">
+            {DOG_COLORWAYS.map((cw, i) => {
+              const selected = dog.colorway === i
+              return (
+                <button
+                  key={cw.id}
+                  type="button"
+                  aria-pressed={selected}
+                  aria-label={lang === 'en' ? cw.nameEn : cw.nameCs}
+                  title={lang === 'en' ? cw.nameEn : cw.nameCs}
+                  onClick={() => setDog({ ...dog, colorway: i })}
+                  className={cn(
+                    'size-9 rounded-full ring-2 ring-offset-2 ring-offset-surface transition-transform',
+                    selected ? 'ring-primary' : 'ring-transparent hover:scale-110',
+                  )}
+                  style={{ background: cw.accent }}
                 />
               )
             })}
