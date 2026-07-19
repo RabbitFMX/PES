@@ -1,7 +1,14 @@
 import { getActivity } from '../db/activities'
-import { getWeeklyTotalPoints, hasDuplicateEntry, insertLogEntries } from '../db/logEntries'
+import {
+  deleteLogEntry,
+  getLogEntryById,
+  getWeeklyTotalPoints,
+  hasDuplicateEntry,
+  insertLogEntries,
+  updateLogEntry,
+} from '../db/logEntries'
 import { getCurrentWeek } from '../db/weeks'
-import type { MemberRow, NewLogEntry } from '../db/types'
+import type { LogEntryRow, MemberRow, NewLogEntry } from '../db/types'
 import { HttpError } from '../middleware/errorHandler'
 import { toActivity } from '../schemas/activity'
 import {
@@ -10,6 +17,7 @@ import {
   type LogCommitResult,
   type LogInput,
   type LogPreview,
+  type SavedLogEntry,
 } from '../schemas/logEntry'
 import { applyCoefficient, computeRawPoints } from './points'
 
@@ -110,4 +118,85 @@ export async function commitLogEntry(input: LogInput, member: MemberRow): Promis
   const weeklyPoints = await getWeeklyTotalPoints(member.id, week.id)
 
   return { entries: saved.map(toSavedLogEntry), weeklyPoints, duplicate }
+}
+
+/**
+ * Load an entry and assert the member may mutate it: it must exist, belong to
+ * the caller, and sit in the currently open week (edits/deletes are limited to
+ * the current week, matching the create path). Returns the row + open week.
+ */
+async function ownedCurrentWeekEntry(
+  id: string,
+  member: MemberRow,
+): Promise<{ entry: LogEntryRow; weekId: string; weekStart: string; weekEnd: string }> {
+  const entry = await getLogEntryById(id)
+  if (!entry) throw new HttpError(404, 'entry_not_found')
+  // Same 404 for "not yours" so we never reveal another member's entry exists.
+  if (entry.member_id !== member.id) throw new HttpError(404, 'entry_not_found')
+
+  const week = await getCurrentWeek(todayIso())
+  if (!week) throw new HttpError(409, 'no_open_week')
+  if (entry.week_id !== week.id) throw new HttpError(403, 'not_current_week')
+
+  return { entry, weekId: week.id, weekStart: week.start_date, weekEnd: week.end_date }
+}
+
+/**
+ * GET /api/log-entries/:id — the owner loads one of their entries (all fields,
+ * incl. note) to prefill the edit form. 404 for missing OR not-owned (no leak).
+ */
+export async function getOwnLogEntry(id: string, member: MemberRow): Promise<SavedLogEntry> {
+  const entry = await getLogEntryById(id)
+  if (!entry || entry.member_id !== member.id) throw new HttpError(404, 'entry_not_found')
+  return toSavedLogEntry(entry)
+}
+
+/**
+ * PATCH /api/log-entries/:id — the owner edits one of their current-week
+ * entries. Points are recomputed server-side; the entry stays in the same week.
+ */
+export async function editLogEntry(
+  id: string,
+  input: LogInput,
+  member: MemberRow,
+): Promise<LogCommitResult> {
+  const { weekId, weekStart, weekEnd } = await ownedCurrentWeekEntry(id, member)
+  const preview = await computePreview(input, member)
+
+  const quickAdd = isQuickAdd(input)
+  const activityDate = quickAdd ? todayIso() : (input.activityDate ?? todayIso())
+  if (activityDate < weekStart || activityDate > weekEnd) {
+    throw new HttpError(400, 'date_outside_week')
+  }
+
+  const updated = await updateLogEntry(id, {
+    activity_id: quickAdd ? null : input.activityId,
+    activity_date: activityDate,
+    quantity: preview.quantity,
+    unit: preview.unit,
+    elevation_m: quickAdd ? null : (input.elevationM ?? null),
+    with_stroller: quickAdd ? false : (input.withStroller ?? false),
+    raw_points: preview.rawPoints,
+    final_points: preview.finalPoints,
+    source: quickAdd ? 'quick-add' : 'manual',
+    note: input.note ?? null,
+  })
+  if (!updated) throw new HttpError(404, 'entry_not_found')
+
+  const weeklyPoints = await getWeeklyTotalPoints(member.id, weekId)
+  return { entries: [toSavedLogEntry(updated)], weeklyPoints, duplicate: false }
+}
+
+/**
+ * DELETE /api/log-entries/:id — the owner removes one of their current-week
+ * entries. Returns the member's new weekly total.
+ */
+export async function removeLogEntry(
+  id: string,
+  member: MemberRow,
+): Promise<{ weeklyPoints: number }> {
+  const { weekId } = await ownedCurrentWeekEntry(id, member)
+  await deleteLogEntry(id)
+  const weeklyPoints = await getWeeklyTotalPoints(member.id, weekId)
+  return { weeklyPoints }
 }

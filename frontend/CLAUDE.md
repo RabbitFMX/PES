@@ -98,6 +98,13 @@ src/
 - **Activity icons:** `components/ActivityIcon.tsx` + mapping in
   `lib/activityIcon.ts` — one line-icon set for all 35 activities, used in the
   log picker, stats, overview and pie legend.
+- **Edit/delete own activities:** on your own Přehled (dashboard), each
+  current-week entry in `MemberOverview`'s "this week" list has edit/delete
+  controls (hidden when viewing another member, and for synthesized test-data
+  rows whose `id` is null). Delete confirms then calls `deleteLogEntry`; edit
+  opens `components/EditEntryModal.tsx`, which loads the authoritative row via
+  `getLogEntry(id)` and PATCHes it (`updateLogEntry`). The backend recomputes
+  points and enforces ownership + current-week.
 - **Test-data toggle:** the per-browser "test data" flag (`lib/testData.ts`,
   localStorage). When on, `apiClient` adds the `X-PES-Test-Data` header and the
   backend serves generated per-activity detail (real weekly totals preserved) so

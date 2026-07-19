@@ -47,10 +47,15 @@ export interface OverviewActivityRef {
 }
 
 export interface CurrentWeekActivity {
+  /** Row id, or null for a synthesized test-data entry (not editable). */
+  id: string | null
+  /** Rate-table activity id (null = quick-add) — lets the edit form rebuild the input. */
+  activityId: string | null
   activityName: string | null
   quantity: number
   unit: string
   elevationM: number
+  withStroller: boolean
   points: number
   date: string
 }
@@ -211,6 +216,21 @@ export interface QuickAddInput {
   note?: string
 }
 export type LogInput = DetailedLogInput | QuickAddInput
+
+/** A saved log entry as returned by GET /log-entries/:id (edit prefill). */
+export interface SavedLogEntry {
+  id: string
+  activityId: string | null
+  activityDate: string
+  quantity: number
+  unit: string
+  elevationM: number | null
+  withStroller: boolean
+  rawPoints: number
+  finalPoints: number
+  source: 'manual' | 'quick-add' | 'llm'
+  note: string | null
+}
 
 export interface LeaderboardRow {
   memberId: string

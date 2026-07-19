@@ -98,10 +98,13 @@ export async function getMemberOverview(
     .slice()
     .sort((a, b) => a.activityDate.localeCompare(b.activityDate))
     .map((e) => ({
+      id: e.id,
+      activityId: e.activityId,
       activityName: nm(e),
       quantity: e.quantity,
       unit: e.unit,
       elevationM: e.elevationM,
+      withStroller: e.withStroller,
       points: round2(e.finalPoints),
       date: e.activityDate,
     }))

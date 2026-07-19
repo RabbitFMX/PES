@@ -26,6 +26,7 @@ import type {
   QuickAddInput,
   Round,
   RotationEntry,
+  SavedLogEntry,
   StatsData,
   ThemePref,
 } from './types'
@@ -135,6 +136,27 @@ export async function commitEntries(previews: LogPreview[]): Promise<{ weeklyPoi
     weeklyPoints = res.weeklyPoints
   }
   return { weeklyPoints }
+}
+
+/** Load one of the member's own entries (all fields) to prefill the edit form. */
+export function getLogEntry(id: string): Promise<SavedLogEntry> {
+  return apiClient.get<SavedLogEntry>(`/log-entries/${id}`)
+}
+
+/**
+ * Edit one of the member's own current-week entries. The backend recomputes
+ * points server-side and returns the member's new weekly total.
+ */
+export function updateLogEntry(
+  id: string,
+  input: DetailedLogInput | QuickAddInput,
+): Promise<{ weeklyPoints: number }> {
+  return apiClient.patch<{ weeklyPoints: number }>(`/log-entries/${id}`, input)
+}
+
+/** Delete one of the member's own current-week entries. */
+export function deleteLogEntry(id: string): Promise<{ weeklyPoints: number }> {
+  return apiClient.delete<{ weeklyPoints: number }>(`/log-entries/${id}`)
 }
 
 /* ---- Natural-language parse — DEFERRED (mock) ---- */

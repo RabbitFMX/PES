@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Bar,
@@ -14,12 +15,14 @@ import {
   YAxis,
 } from 'recharts'
 import { useAsync } from '../lib/useAsync'
-import { getMemberOverview } from '../lib/api'
+import { deleteLogEntry, getMemberOverview } from '../lib/api'
 import { formatPoints } from '../lib/format'
 import { pesCategory } from '../lib/pesTitle'
 import { ActivityIcon } from './ActivityIcon'
+import { EditEntryModal } from './EditEntryModal'
 import { useLogActivity } from '../context/logActivity'
-import type { MemberOverview as Overview } from '../lib/types'
+import { useToast } from '../context/toast'
+import type { CurrentWeekActivity, MemberOverview as Overview } from '../lib/types'
 import { Card } from './ui/Card'
 import { Avatar } from './ui/Avatar'
 import { Badge } from './ui/Badge'
@@ -68,10 +71,18 @@ export function MemberOverview({ memberId, isSelf }: { memberId: string; isSelf?
 
   if (loading) return <OverviewSkeleton />
   if (error || !data) return <ErrorState onRetry={reload} />
-  return <Body data={data} isSelf={isSelf} />
+  return <Body data={data} isSelf={isSelf} onReload={reload} />
 }
 
-function Body({ data, isSelf }: { data: Overview; isSelf?: boolean }) {
+function Body({
+  data,
+  isSelf,
+  onReload,
+}: {
+  data: Overview
+  isSelf?: boolean
+  onReload: () => void
+}) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language.startsWith('en') ? 'en' : 'cs'
   const { open: openLog } = useLogActivity()
@@ -130,32 +141,11 @@ function Body({ data, isSelf }: { data: Overview; isSelf?: boolean }) {
           </div>
         </Card>
 
-        <Card>
-          <h2 className="mb-3 text-lg font-semibold text-text">{t('overview.thisWeek')}</h2>
-          {data.currentWeekActivities.length === 0 ? (
-            <EmptyState title={t('overview.noActivities')} />
-          ) : (
-            <ul className="flex flex-col divide-y divide-border">
-              {data.currentWeekActivities.map((a, i) => (
-                <li key={i} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <span className="min-w-0">
-                    <span className="font-medium text-text">
-                      {a.activityName ?? t('overview.quickAdd')}
-                    </span>
-                    <span className="text-muted">
-                      {' · '}
-                      {a.quantity} {a.unit}
-                      {a.elevationM > 0 ? ` · ↑ ${a.elevationM} m` : ''}
-                    </span>
-                  </span>
-                  <span className="shrink-0 font-medium tabular-nums text-text">
-                    {formatPoints(a.points)} {t('overview.pts')}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <ThisWeekCard
+          activities={data.currentWeekActivities}
+          editable={!!isSelf}
+          onReload={onReload}
+        />
       </div>
 
       {/* Record KPI tiles */}
@@ -302,6 +292,133 @@ function Body({ data, isSelf }: { data: Overview; isSelf?: boolean }) {
         )}
       </Card>
     </div>
+  )
+}
+
+/** This-week activity list; when `editable`, each real entry can be edited/deleted. */
+function ThisWeekCard({
+  activities,
+  editable,
+  onReload,
+}: {
+  activities: CurrentWeekActivity[]
+  editable: boolean
+  onReload: () => void
+}) {
+  const { t } = useTranslation()
+  const { showToast } = useToast()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  async function remove(id: string) {
+    if (!window.confirm(t('overview.confirmDelete'))) return
+    setDeletingId(id)
+    try {
+      await deleteLogEntry(id)
+      showToast({ message: t('overview.entryDeleted'), variant: 'success' })
+      onReload()
+    } catch (err) {
+      showToast({ message: (err as Error).message || t('common.loadError'), variant: 'error' })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  return (
+    <Card>
+      <h2 className="mb-3 text-lg font-semibold text-text">{t('overview.thisWeek')}</h2>
+      {activities.length === 0 ? (
+        <EmptyState title={t('overview.noActivities')} />
+      ) : (
+        <ul className="flex flex-col divide-y divide-border">
+          {activities.map((a, i) => (
+            <li key={a.id ?? i} className="flex items-center justify-between gap-2 py-2 text-sm">
+              <span className="flex min-w-0 items-center gap-2">
+                <ActivityIcon activityId={a.activityId} className="size-4 shrink-0 text-muted" />
+                <span className="min-w-0">
+                  <span className="font-medium text-text">
+                    {a.activityName ?? t('overview.quickAdd')}
+                  </span>
+                  <span className="text-muted">
+                    {' · '}
+                    {a.quantity} {a.unit}
+                    {a.elevationM > 0 ? ` · ↑ ${a.elevationM} m` : ''}
+                  </span>
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1">
+                <span className="font-medium tabular-nums text-text">
+                  {formatPoints(a.points)} {t('overview.pts')}
+                </span>
+                {editable && a.id && (
+                  <>
+                    <IconButton
+                      label={t('overview.edit')}
+                      onClick={() => setEditingId(a.id as string)}
+                    >
+                      {PENCIL}
+                    </IconButton>
+                    <IconButton
+                      label={t('overview.delete')}
+                      onClick={() => remove(a.id as string)}
+                      disabled={deletingId === a.id}
+                    >
+                      {TRASH}
+                    </IconButton>
+                  </>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {editingId && (
+        <EditEntryModal
+          entryId={editingId}
+          onClose={() => setEditingId(null)}
+          onSaved={() => onReload()}
+        />
+      )}
+    </Card>
+  )
+}
+
+const PENCIL = (
+  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h4L18 10l-4-4L4 16v4Z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6.5l4 4" />
+  </svg>
+)
+
+const TRASH = (
+  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 7h14M10 7V5h4v2M6 7l1 13h10l1-13" />
+  </svg>
+)
+
+/** A small icon-only button used by the this-week edit/delete controls. */
+function IconButton({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={disabled}
+      className="rounded-full p-1.5 text-muted hover:bg-secondary/10 hover:text-text disabled:opacity-40"
+    >
+      {children}
+    </button>
   )
 }
 

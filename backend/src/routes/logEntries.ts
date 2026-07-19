@@ -1,7 +1,13 @@
 import { Router } from 'express'
 import type { AuthedRequest } from '../middleware/auth'
 import { logInputSchema } from '../schemas/logEntry'
-import { commitLogEntry, previewLogEntry } from '../services/logEntries'
+import {
+  commitLogEntry,
+  editLogEntry,
+  getOwnLogEntry,
+  previewLogEntry,
+  removeLogEntry,
+} from '../services/logEntries'
 
 export const logEntriesRouter = Router()
 
@@ -28,6 +34,46 @@ logEntriesRouter.post('/log-entries', async (req, res, next) => {
     const input = logInputSchema.parse(req.body)
     const { member } = req as AuthedRequest
     res.status(201).json(await commitLogEntry(input, member))
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * GET /api/log-entries/:id — the owner loads one of their entries to prefill
+ * the edit form. 404 for missing or not-owned.
+ */
+logEntriesRouter.get('/log-entries/:id', async (req, res, next) => {
+  try {
+    const { member } = req as AuthedRequest
+    res.json(await getOwnLogEntry(req.params.id, member))
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * PATCH /api/log-entries/:id — the owner edits one of their current-week
+ * entries (points recomputed server-side). Ownership + current-week enforced.
+ */
+logEntriesRouter.patch('/log-entries/:id', async (req, res, next) => {
+  try {
+    const input = logInputSchema.parse(req.body)
+    const { member } = req as AuthedRequest
+    res.json(await editLogEntry(req.params.id, input, member))
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * DELETE /api/log-entries/:id — the owner deletes one of their current-week
+ * entries. Returns the member's new weekly total.
+ */
+logEntriesRouter.delete('/log-entries/:id', async (req, res, next) => {
+  try {
+    const { member } = req as AuthedRequest
+    res.json(await removeLogEntry(req.params.id, member))
   } catch (err) {
     next(err)
   }

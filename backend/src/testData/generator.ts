@@ -129,10 +129,12 @@ export function generateWeekEntries(
     const dayOffset = Math.floor(rng() * 7)
     const points = c / 100
     return {
+      id: null, // synthesized test-data entries are not real rows → not editable
       activityDate: addDaysIso(week.weekStartDate, dayOffset),
       quantity: quantityFor(activity, points),
       unit: activity.unit,
       elevationM: elevationFor(activity, points, rng),
+      withStroller: false,
       finalPoints: round2(points),
       weekId: week.weekId,
       weekStartDate: week.weekStartDate,

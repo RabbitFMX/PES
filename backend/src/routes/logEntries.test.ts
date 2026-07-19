@@ -12,10 +12,20 @@ const getCurrentWeek = vi.hoisted(() => vi.fn())
 const insertLogEntries = vi.hoisted(() => vi.fn())
 const getWeeklyTotalPoints = vi.hoisted(() => vi.fn())
 const hasDuplicateEntry = vi.hoisted(() => vi.fn())
+const getLogEntryById = vi.hoisted(() => vi.fn())
+const updateLogEntry = vi.hoisted(() => vi.fn())
+const deleteLogEntry = vi.hoisted(() => vi.fn())
 
 vi.mock('../db/activities', () => ({ getActivity }))
 vi.mock('../db/weeks', () => ({ getCurrentWeek }))
-vi.mock('../db/logEntries', () => ({ insertLogEntries, getWeeklyTotalPoints, hasDuplicateEntry }))
+vi.mock('../db/logEntries', () => ({
+  insertLogEntries,
+  getWeeklyTotalPoints,
+  hasDuplicateEntry,
+  getLogEntryById,
+  updateLogEntry,
+  deleteLogEntry,
+}))
 
 const memberRow: MemberRow = {
   id: 'user-1',
@@ -96,7 +106,7 @@ function buildApp() {
   return app
 }
 
-function authed(method: 'post', path: string) {
+function authed(method: 'get' | 'post' | 'patch' | 'delete', path: string) {
   return request(buildApp())[method](path).set('Authorization', 'Bearer valid')
 }
 
@@ -107,6 +117,9 @@ beforeEach(() => {
   hasDuplicateEntry.mockResolvedValue(false)
   insertLogEntries.mockResolvedValue([savedRow()])
   getWeeklyTotalPoints.mockResolvedValue(30)
+  getLogEntryById.mockResolvedValue(savedRow())
+  updateLogEntry.mockImplementation(async (_id, patch) => savedRow(patch))
+  deleteLogEntry.mockResolvedValue(undefined)
 })
 
 describe('POST /api/log-entries/preview', () => {
@@ -267,6 +280,116 @@ describe('POST /api/log-entries (commit)', () => {
     })
     expect(res.status).toBe(409)
     expect(res.body).toEqual({ error: 'no_open_week' })
+  })
+})
+
+describe('GET /api/log-entries/:id (load own for edit)', () => {
+  it('401s without a token', async () => {
+    const res = await request(buildApp()).get('/api/log-entries/entry-1')
+    expect(res.status).toBe(401)
+  })
+
+  it('returns the owner’s entry', async () => {
+    const res = await authed('get', '/api/log-entries/entry-1')
+    expect(res.status).toBe(200)
+    expect(res.body).toMatchObject({ id: 'entry-1', activityId: 'run', finalPoints: 30 })
+  })
+
+  it("404s another member's entry (no leak)", async () => {
+    getLogEntryById.mockResolvedValue(savedRow({ member_id: 'someone-else' }))
+    const res = await authed('get', '/api/log-entries/entry-1')
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('PATCH /api/log-entries/:id (edit own)', () => {
+  it('401s without a token', async () => {
+    const res = await request(buildApp())
+      .patch('/api/log-entries/entry-1')
+      .send({ activityId: 'run', quantity: 8 })
+    expect(res.status).toBe(401)
+  })
+
+  it('recomputes points server-side and returns the updated entry + weekly total', async () => {
+    getWeeklyTotalPoints.mockResolvedValue(42)
+    const res = await authed('patch', '/api/log-entries/entry-1').send({
+      activityId: 'run',
+      quantity: 10,
+      activityDate: '2026-07-08',
+    })
+
+    expect(res.status).toBe(200)
+    expect(updateLogEntry).toHaveBeenCalledTimes(1)
+    const [id, patch] = updateLogEntry.mock.calls[0]
+    expect(id).toBe('entry-1')
+    // 10 km run raw = 30, ×1.25 = 37.5 — server value, not any client input.
+    expect(patch).toMatchObject({ activity_id: 'run', raw_points: 30, final_points: 37.5 })
+    expect(res.body.weeklyPoints).toBe(42)
+    expect(res.body.entries).toHaveLength(1)
+  })
+
+  it("404s an entry that isn't the caller's (no existence leak)", async () => {
+    getLogEntryById.mockResolvedValue(savedRow({ member_id: 'someone-else' }))
+    const res = await authed('patch', '/api/log-entries/entry-1').send({
+      activityId: 'run',
+      quantity: 8,
+    })
+    expect(res.status).toBe(404)
+    expect(updateLogEntry).not.toHaveBeenCalled()
+  })
+
+  it('404s a missing entry', async () => {
+    getLogEntryById.mockResolvedValue(null)
+    const res = await authed('patch', '/api/log-entries/nope').send({
+      activityId: 'run',
+      quantity: 8,
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it('403s editing an entry from a past (non-current) week', async () => {
+    getLogEntryById.mockResolvedValue(savedRow({ week_id: 'week-old' }))
+    const res = await authed('patch', '/api/log-entries/entry-1').send({
+      activityId: 'run',
+      quantity: 8,
+    })
+    expect(res.status).toBe(403)
+    expect(res.body).toEqual({ error: 'not_current_week' })
+    expect(updateLogEntry).not.toHaveBeenCalled()
+  })
+
+  it('400s an invalid body', async () => {
+    const res = await authed('patch', '/api/log-entries/entry-1').send({ quantity: -3 })
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('DELETE /api/log-entries/:id (delete own)', () => {
+  it('401s without a token', async () => {
+    const res = await request(buildApp()).delete('/api/log-entries/entry-1')
+    expect(res.status).toBe(401)
+  })
+
+  it('deletes the entry and returns the new weekly total', async () => {
+    getWeeklyTotalPoints.mockResolvedValue(12)
+    const res = await authed('delete', '/api/log-entries/entry-1')
+    expect(res.status).toBe(200)
+    expect(deleteLogEntry).toHaveBeenCalledWith('entry-1')
+    expect(res.body).toEqual({ weeklyPoints: 12 })
+  })
+
+  it("404s deleting an entry that isn't the caller's", async () => {
+    getLogEntryById.mockResolvedValue(savedRow({ member_id: 'someone-else' }))
+    const res = await authed('delete', '/api/log-entries/entry-1')
+    expect(res.status).toBe(404)
+    expect(deleteLogEntry).not.toHaveBeenCalled()
+  })
+
+  it('403s deleting an entry from a past week', async () => {
+    getLogEntryById.mockResolvedValue(savedRow({ week_id: 'week-old' }))
+    const res = await authed('delete', '/api/log-entries/entry-1')
+    expect(res.status).toBe(403)
+    expect(deleteLogEntry).not.toHaveBeenCalled()
   })
 })
 

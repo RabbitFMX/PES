@@ -37,10 +37,15 @@ export const memberOverviewSchema = z.object({
   /** Every entry logged in the current open week, with detail (distance/reps/elevation). */
   currentWeekActivities: z.array(
     z.object({
+      /** The row id (null for a synthesized test-data entry → not editable). */
+      id: z.string().nullable(),
+      /** The rate-table activity id (null = quick-add) — lets the edit form rebuild the input. */
+      activityId: z.string().nullable(),
       activityName: z.string().nullable(), // null = quick-add (no rate-table activity)
       quantity: z.number(),
       unit: z.string(),
       elevationM: z.number(),
+      withStroller: z.boolean(),
       points: z.number(),
       date: z.string(),
     }),

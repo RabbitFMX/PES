@@ -54,10 +54,12 @@ function buildApp() {
 
 function entry(over: Record<string, unknown>) {
   return {
+    id: 'e-1',
     activityDate: '2026-07-07',
     quantity: 0,
     unit: 'pts',
     elevationM: 0,
+    withStroller: false,
     finalPoints: 0,
     weekId: 'w',
     weekStartDate: '2026-07-06',

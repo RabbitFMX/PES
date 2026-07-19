@@ -159,6 +159,14 @@ attaches `req.member` when a valid token is present and otherwise continues.
 - `GET /api/activities` — active rate table for the log-activity screen ✅ (chunk 5)
 - `POST /api/log-entries/preview` — compute points for an entry, no write ✅ (chunk 6)
 - `POST /api/log-entries` — commit a log entry ✅ (chunk 6)
+- `GET /api/log-entries/:id` — the owner loads one of their own entries (all
+  fields, incl. note) to prefill the edit form; 404 if missing or not-owned ✅
+- `PATCH /api/log-entries/:id` — the owner edits one of their OWN entries;
+  points recomputed server-side. Guarded: ownership (404, no existence leak) +
+  the entry must be in the currently open week (403 `not_current_week`) ✅
+- `DELETE /api/log-entries/:id` — the owner deletes one of their OWN current
+  -week entries; returns the new weekly total. Same ownership + current-week
+  guards ✅
 - `POST /api/log-entries/parse` — LLM natural-language → structured preview;
   **deferred to seminar 6** — returns `501 not_implemented` (stub, no LLM call)
 - `GET /api/dashboard` — personal dashboard: weekly progress, streak ✅ (chunk 7)

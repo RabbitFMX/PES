@@ -26,6 +26,57 @@ export async function insertLogEntries(
   return (data ?? []) as LogEntryRow[]
 }
 
+/** Fetch a single log entry by id (or null). Used by the self edit/delete path. */
+export async function getLogEntryById(
+  id: string,
+  client: Supabase = supabase,
+): Promise<LogEntryRow | null> {
+  const { data, error } = await client.from('log_entry').select('*').eq('id', id).maybeSingle()
+
+  if (error) throw error
+  return (data as LogEntryRow | null) ?? null
+}
+
+/** Columns an owner may change when editing one of their entries. */
+export type LogEntryUpdate = Partial<
+  Pick<
+    NewLogEntry,
+    | 'activity_id'
+    | 'activity_date'
+    | 'quantity'
+    | 'unit'
+    | 'elevation_m'
+    | 'with_stroller'
+    | 'raw_points'
+    | 'final_points'
+    | 'source'
+    | 'note'
+  >
+>
+
+/** Update a log entry by id; returns the updated row (null if no such id). */
+export async function updateLogEntry(
+  id: string,
+  patch: LogEntryUpdate,
+  client: Supabase = supabase,
+): Promise<LogEntryRow | null> {
+  const { data, error } = await client
+    .from('log_entry')
+    .update(patch)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle()
+
+  if (error) throw error
+  return (data as LogEntryRow | null) ?? null
+}
+
+/** Delete a log entry by id. */
+export async function deleteLogEntry(id: string, client: Supabase = supabase): Promise<void> {
+  const { error } = await client.from('log_entry').delete().eq('id', id)
+  if (error) throw error
+}
+
 /** Sum of a member's final points within a week (their weekly total). */
 export async function getWeeklyTotalPoints(
   memberId: string,
@@ -83,10 +134,13 @@ export async function listRoundEntries(
  * the year-spanning stats stay one round-trip. `activity` is null for quick-add.
  */
 export interface MemberStatEntry {
+  /** The real row id, or null for a synthesized test-data entry (not editable). */
+  id: string | null
   activityDate: string
   quantity: number
   unit: string
   elevationM: number
+  withStroller: boolean
   finalPoints: number
   weekId: string
   weekStartDate: string
@@ -105,7 +159,7 @@ export async function listMemberEntriesDetailed(
   const { data, error } = await client
     .from('log_entry')
     .select(
-      'activity_date, quantity, unit, elevation_m, final_points, week_id, activity_id, ' +
+      'id, activity_date, quantity, unit, elevation_m, with_stroller, final_points, week_id, activity_id, ' +
         'week!inner(start_date, week_number, round_id), activity(name_cs, name_en)',
     )
     .eq('member_id', memberId)
@@ -113,10 +167,12 @@ export async function listMemberEntriesDetailed(
   if (error) throw error
 
   type Row = {
+    id: string
     activity_date: string
     quantity: number
     unit: string
     elevation_m: number | null
+    with_stroller: boolean
     final_points: number
     week_id: string
     activity_id: string | null
@@ -125,10 +181,12 @@ export async function listMemberEntriesDetailed(
   }
 
   const rows = ((data ?? []) as unknown as Row[]).map((r) => ({
+    id: r.id,
     activityDate: r.activity_date,
     quantity: Number(r.quantity),
     unit: r.unit,
     elevationM: Number(r.elevation_m ?? 0),
+    withStroller: r.with_stroller ?? false,
     finalPoints: Number(r.final_points),
     weekId: r.week_id,
     weekStartDate: r.week.start_date,

@@ -152,10 +152,12 @@ function mk(
   activityId: string | null,
 ): MemberStatEntry {
   return {
+    id: `${weekId}-${date}`,
     activityDate: date,
     quantity: 1,
     unit: 'km',
     elevationM: 0,
+    withStroller: false,
     finalPoints,
     weekId,
     weekStartDate: date,

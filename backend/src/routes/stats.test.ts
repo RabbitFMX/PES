@@ -94,10 +94,12 @@ const week2: WeekRow = {
 
 function entry(overrides: Partial<MemberStatEntry>): MemberStatEntry {
   return {
+    id: 'entry-1',
     activityDate: '2026-01-05',
     quantity: 8,
     unit: 'km',
     elevationM: 0,
+    withStroller: false,
     finalPoints: 30,
     weekId: 'week-1',
     weekStartDate: '2026-01-05',
